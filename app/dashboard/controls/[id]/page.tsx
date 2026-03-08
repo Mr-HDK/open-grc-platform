@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 
 import { archiveControlAction } from "@/app/dashboard/controls/actions";
 import { buttonVariants } from "@/components/ui/button";
+import { EvidenceListSection } from "@/components/evidence/evidence-list-section";
 import { requireSessionProfile } from "@/lib/auth/profile";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
@@ -36,6 +37,31 @@ type LinkedRiskRow = {
     score: number;
     deleted_at: string | null;
   } | null;
+};
+
+type EvidenceRow = {
+  id: string;
+  title: string;
+  file_name: string;
+  file_size: number;
+  created_at: string;
+};
+
+type MappingRow = {
+  framework_requirement_id: string;
+};
+
+type RequirementRow = {
+  id: string;
+  framework_id: string;
+  reference_code: string;
+  title: string;
+};
+
+type FrameworkRow = {
+  id: string;
+  code: string;
+  version: string;
 };
 
 async function getControlById(controlId: string) {
@@ -78,6 +104,71 @@ async function getLinkedRisks(controlId: string) {
   return (data ?? []).filter((row) => row.risks && !row.risks.deleted_at);
 }
 
+async function getControlEvidence(controlId: string) {
+  const supabase = await createSupabaseServerClient();
+  const { data } = await supabase
+    .from("evidence")
+    .select("id, title, file_name, file_size, created_at")
+    .eq("control_id", controlId)
+    .is("archived_at", null)
+    .order("created_at", { ascending: false })
+    .returns<EvidenceRow[]>();
+
+  return data ?? [];
+}
+
+async function getFrameworkMappings(controlId: string) {
+  const supabase = await createSupabaseServerClient();
+
+  const { data: mappings } = await supabase
+    .from("control_framework_mappings")
+    .select("framework_requirement_id")
+    .eq("control_id", controlId)
+    .returns<MappingRow[]>();
+
+  const requirementIds = (mappings ?? []).map((row) => row.framework_requirement_id);
+
+  if (requirementIds.length === 0) {
+    return [];
+  }
+
+  const { data: requirements } = await supabase
+    .from("framework_requirements")
+    .select("id, framework_id, reference_code, title")
+    .in("id", requirementIds)
+    .returns<RequirementRow[]>();
+
+  const frameworkIds = Array.from(
+    new Set((requirements ?? []).map((requirement) => requirement.framework_id)),
+  );
+
+  const { data: frameworks } = frameworkIds.length
+    ? await supabase
+        .from("frameworks")
+        .select("id, code, version")
+        .in("id", frameworkIds)
+        .returns<FrameworkRow[]>()
+    : { data: [] as FrameworkRow[] };
+
+  const frameworkById = new Map((frameworks ?? []).map((framework) => [framework.id, framework]));
+
+  return (requirements ?? [])
+    .map((requirement) => {
+      const framework = frameworkById.get(requirement.framework_id);
+
+      return framework
+        ? {
+            requirementId: requirement.id,
+            frameworkCode: framework.code,
+            frameworkVersion: framework.version,
+            referenceCode: requirement.reference_code,
+            title: requirement.title,
+          }
+        : null;
+    })
+    .filter((item): item is NonNullable<typeof item> => Boolean(item));
+}
+
 export default async function ControlDetailPage({
   params,
   searchParams,
@@ -96,9 +187,11 @@ export default async function ControlDetailPage({
     notFound();
   }
 
-  const [owner, linkedRisks] = await Promise.all([
+  const [owner, linkedRisks, evidence, frameworkMappings] = await Promise.all([
     getOwner(control.owner_profile_id),
     getLinkedRisks(control.id),
+    getControlEvidence(control.id),
+    getFrameworkMappings(control.id),
   ]);
 
   return (
@@ -194,6 +287,33 @@ export default async function ControlDetailPage({
           </ul>
         )}
       </section>
+
+      <section className="rounded-xl border bg-card p-6">
+        <h2 className="text-lg font-semibold tracking-tight">Framework mappings</h2>
+
+        {frameworkMappings.length === 0 ? (
+          <p className="mt-3 text-sm text-muted-foreground">No framework requirements mapped.</p>
+        ) : (
+          <ul className="mt-4 space-y-3">
+            {frameworkMappings.map((mapping) => (
+              <li key={mapping.requirementId} className="rounded-lg border p-3">
+                <p className="text-sm font-medium">
+                  {mapping.frameworkCode} {mapping.referenceCode}
+                </p>
+                <p className="mt-1 text-xs text-muted-foreground">{mapping.title}</p>
+                <p className="mt-1 text-xs text-muted-foreground">Version {mapping.frameworkVersion}</p>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+
+      <EvidenceListSection
+        title="Evidence"
+        emptyMessage="No evidence linked to this control."
+        items={evidence}
+        createHref={`/dashboard/evidence/new?controlId=${control.id}`}
+      />
     </div>
   );
 }

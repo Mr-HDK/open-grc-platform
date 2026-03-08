@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 
 import { archiveRiskAction } from "@/app/dashboard/risks/actions";
 import { buttonVariants } from "@/components/ui/button";
+import { EvidenceListSection } from "@/components/evidence/evidence-list-section";
 import { requireSessionProfile } from "@/lib/auth/profile";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
@@ -21,6 +22,14 @@ type RiskDetail = {
   updated_at: string;
 };
 
+type EvidenceRow = {
+  id: string;
+  title: string;
+  file_name: string;
+  file_size: number;
+  created_at: string;
+};
+
 async function getRiskById(riskId: string) {
   const supabase = await createSupabaseServerClient();
   const { data } = await supabase
@@ -33,6 +42,19 @@ async function getRiskById(riskId: string) {
     .maybeSingle<RiskDetail>();
 
   return data;
+}
+
+async function getRiskEvidence(riskId: string) {
+  const supabase = await createSupabaseServerClient();
+  const { data } = await supabase
+    .from("evidence")
+    .select("id, title, file_name, file_size, created_at")
+    .eq("risk_id", riskId)
+    .is("archived_at", null)
+    .order("created_at", { ascending: false })
+    .returns<EvidenceRow[]>();
+
+  return data ?? [];
 }
 
 export default async function RiskDetailPage({
@@ -51,6 +73,8 @@ export default async function RiskDetailPage({
   if (!risk) {
     notFound();
   }
+
+  const evidence = await getRiskEvidence(risk.id);
 
   return (
     <div className="space-y-6">
@@ -118,6 +142,13 @@ export default async function RiskDetailPage({
           <p className="mt-1 text-sm font-medium">{new Date(risk.updated_at).toLocaleString()}</p>
         </div>
       </div>
+
+      <EvidenceListSection
+        title="Evidence"
+        emptyMessage="No evidence linked to this risk."
+        items={evidence}
+        createHref={`/dashboard/evidence/new?riskId=${risk.id}`}
+      />
     </div>
   );
 }

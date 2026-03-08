@@ -127,3 +127,208 @@ from mapping_rows
 join public.controls controls on controls.code = mapping_rows.control_code
 join public.risks risks on risks.title = mapping_rows.risk_title
 where not exists (select 1 from public.risk_controls);
+
+with owner as (
+  select id from public.profiles order by created_at limit 1
+),
+refs as (
+  select
+    (select id from public.risks where title = 'Delayed vulnerability patching' limit 1) as risk_vuln,
+    (select id from public.risks where title = 'No MFA for legacy VPN users' limit 1) as risk_mfa,
+    (select id from public.risks where title = 'Backup restore process untested' limit 1) as risk_bcp,
+    (select id from public.controls where code = 'VULN-002' limit 1) as control_vuln,
+    (select id from public.controls where code = 'IAM-001' limit 1) as control_mfa,
+    (select id from public.controls where code = 'BCP-003' limit 1) as control_bcp
+)
+insert into public.action_plans (
+  title,
+  description,
+  risk_id,
+  control_id,
+  owner_profile_id,
+  status,
+  priority,
+  target_date,
+  created_by,
+  updated_by,
+  completed_at
+)
+select *
+from (
+  select
+    'Patch critical CVEs on internet-facing assets'::text,
+    'Remediate all critical internet-facing CVEs and attach evidence for closure.'::text,
+    refs.risk_vuln,
+    refs.control_vuln,
+    owner.id,
+    'in_progress'::public.action_status,
+    'critical'::public.priority,
+    current_date + 10,
+    owner.id,
+    owner.id,
+    null::timestamptz
+  from owner, refs
+
+  union all
+
+  select
+    'Enforce MFA on remaining legacy VPN accounts',
+    'Migrate remaining users to MFA-enabled VPN policies and revoke legacy exceptions.',
+    refs.risk_mfa,
+    refs.control_mfa,
+    owner.id,
+    'open'::public.action_status,
+    'high'::public.priority,
+    current_date + 14,
+    owner.id,
+    owner.id,
+    null::timestamptz
+  from owner, refs
+
+  union all
+
+  select
+    'Run DR restore drill for tier-1 systems',
+    'Execute quarterly restore drill and document recovery timings and gaps.',
+    refs.risk_bcp,
+    refs.control_bcp,
+    owner.id,
+    'blocked'::public.action_status,
+    'high'::public.priority,
+    current_date - 2,
+    owner.id,
+    owner.id,
+    null::timestamptz
+  from owner, refs
+
+  union all
+
+  select
+    'Close historical change tickets evidence gap',
+    'Backfill missing links between emergency deployments and approval records.',
+    (select id from public.risks where title = 'Untracked production changes' limit 1),
+    (select id from public.controls where code = 'CHG-005' limit 1),
+    owner.id,
+    'done'::public.action_status,
+    'medium'::public.priority,
+    current_date - 12,
+    owner.id,
+    owner.id,
+    timezone('utc', now()) - interval '3 day'
+  from owner
+
+  union all
+
+  select
+    'Review vendor onboarding SoD exceptions',
+    'Review and close unresolved segregation-of-duties exceptions in onboarding flow.',
+    (select id from public.risks where title = 'Single approver vendor onboarding' limit 1),
+    (select id from public.controls where code = 'THIRD-006' limit 1),
+    owner.id,
+    'open'::public.action_status,
+    'medium'::public.priority,
+    current_date + 18,
+    owner.id,
+    owner.id,
+    null::timestamptz
+  from owner
+) seeded
+where not exists (select 1 from public.action_plans);
+
+with owner as (
+  select id from public.profiles order by created_at limit 1
+),
+refs as (
+  select
+    (select id from public.risks where title = 'Delayed vulnerability patching' limit 1) as risk_id,
+    (select id from public.controls where code = 'VULN-002' limit 1) as control_id,
+    (select id from public.action_plans where title = 'Patch critical CVEs on internet-facing assets' limit 1) as action_plan_id
+)
+insert into public.evidence (
+  file_name,
+  file_path,
+  mime_type,
+  file_size,
+  title,
+  description,
+  risk_id,
+  control_id,
+  action_plan_id,
+  uploaded_by
+)
+select
+  'vuln-report-q1.pdf',
+  'seed/vuln-report-q1.pdf',
+  'application/pdf',
+  120000,
+  'Quarterly vulnerability report',
+  'Sample seeded metadata for vulnerability review evidence.',
+  refs.risk_id,
+  refs.control_id,
+  refs.action_plan_id,
+  owner.id
+from owner, refs
+where not exists (select 1 from public.evidence);
+
+insert into public.frameworks (code, name, version)
+values
+  ('COBIT', 'COBIT', '2019'),
+  ('ISO27001', 'ISO/IEC 27001', '2022'),
+  ('NIST-CSF', 'NIST Cybersecurity Framework', '2.0'),
+  ('NIS2', 'NIS2 Directive', '2022')
+on conflict (code) do update
+set
+  name = excluded.name,
+  version = excluded.version;
+
+with requirement_rows(framework_code, reference_code, title, description, domain) as (
+  values
+    ('COBIT', 'EDM03', 'Ensure Risk Optimisation', 'Govern enterprise risk management and treatment.', 'Governance'),
+    ('COBIT', 'APO12', 'Manage Risk', 'Identify, assess and maintain risk responses.', 'Risk Management'),
+    ('ISO27001', 'A.5.15', 'Access control', 'Implement policy and controls for access rights management.', 'Access Control'),
+    ('ISO27001', 'A.8.8', 'Management of technical vulnerabilities', 'Obtain and evaluate vulnerability information and remediate.', 'Vulnerability Management'),
+    ('NIST-CSF', 'GV.RM-01', 'Risk management objectives established', 'Define and approve risk objectives and tolerances.', 'Govern'),
+    ('NIST-CSF', 'DE.CM-01', 'Networks and services monitored', 'Monitor networks and services to detect anomalies.', 'Detect'),
+    ('NIS2', 'Art21(2)(d)', 'Security in network and information systems acquisition', 'Address security in lifecycle and development practices.', 'Security Engineering'),
+    ('NIS2', 'Art21(2)(f)', 'Policies and procedures for effectiveness of risk-management measures', 'Measure and improve cybersecurity risk treatment controls.', 'Risk Management')
+)
+insert into public.framework_requirements (framework_id, reference_code, title, description, domain)
+select
+  frameworks.id,
+  requirement_rows.reference_code,
+  requirement_rows.title,
+  requirement_rows.description,
+  requirement_rows.domain
+from requirement_rows
+join public.frameworks frameworks on frameworks.code = requirement_rows.framework_code
+on conflict (framework_id, reference_code) do update
+set
+  title = excluded.title,
+  description = excluded.description,
+  domain = excluded.domain;
+
+with mapping_rows(control_code, framework_code, reference_code, notes) as (
+  values
+    ('IAM-001', 'ISO27001', 'A.5.15', 'MFA enforcement supports strong access control.'),
+    ('IAM-001', 'NIS2', 'Art21(2)(d)', 'Access hardening is part of secure system operations.'),
+    ('VULN-002', 'ISO27001', 'A.8.8', 'Vulnerability review cycle maps to technical vulnerability management.'),
+    ('VULN-002', 'NIST-CSF', 'DE.CM-01', 'Regular scanning and monitoring support detection outcomes.'),
+    ('THIRD-006', 'COBIT', 'APO12', 'Vendor onboarding controls contribute to risk treatment governance.'),
+    ('CHG-005', 'COBIT', 'EDM03', 'Change governance supports enterprise risk optimization.'),
+    ('BCP-003', 'NIST-CSF', 'GV.RM-01', 'Recovery testing supports declared risk objectives and continuity.'),
+    ('THIRD-006', 'NIS2', 'Art21(2)(f)', 'Control effectiveness reviews support risk management policy maturity.')
+)
+insert into public.control_framework_mappings (control_id, framework_requirement_id, notes)
+select
+  controls.id,
+  requirements.id,
+  mapping_rows.notes
+from mapping_rows
+join public.controls controls on controls.code = mapping_rows.control_code
+join public.frameworks frameworks on frameworks.code = mapping_rows.framework_code
+join public.framework_requirements requirements
+  on requirements.framework_id = frameworks.id
+ and requirements.reference_code = mapping_rows.reference_code
+on conflict (control_id, framework_requirement_id) do update
+set
+  notes = excluded.notes;
