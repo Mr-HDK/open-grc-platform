@@ -16,10 +16,10 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 45
     env:
-      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
-      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
-      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-      DIRECT_URL: ${{ secrets.DIRECT_URL }}
+      NEXT_PUBLIC_SUPABASE_URL: ${{secrets.NEXT_PUBLIC_SUPABASE_URL}}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY}}
+      SUPABASE_SERVICE_ROLE_KEY: ${{secrets.SUPABASE_SERVICE_ROLE_KEY}}
+      DIRECT_URL: ${{secrets.DIRECT_URL}}
       E2E_RISK_TEST_EMAIL: contributor@open-grc.local
       E2E_RISK_TEST_PASSWORD: ChangeMe123!
       E2E_ADMIN_TEST_EMAIL: admin@open-grc.local
