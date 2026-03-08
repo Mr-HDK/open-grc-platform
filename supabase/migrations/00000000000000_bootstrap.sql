@@ -1,0 +1,2 @@
+-- Placeholder migration file.
+-- Real SQL migrations will be added in module-specific steps.

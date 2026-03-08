@@ -1,0 +1,2 @@
+-- Placeholder seed file.
+-- Real seed data will be added with each module.
