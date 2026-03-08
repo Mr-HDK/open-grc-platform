@@ -10,7 +10,10 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "typecheck": "tsc --noEmit",
-    "test:e2e": "playwright test"
+    "db:setup": "node scripts/db-setup.mjs",
+    "test:e2e": "playwright test --workers=1",
+    "test:e2e:parallel": "playwright test",
+    "test:e2e:ci": "npm run db:setup && npm run test:e2e"
   },
   "dependencies": {
     "@supabase/ssr": "^0.6.1",

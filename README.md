@@ -100,6 +100,7 @@ Copy `.env.example` to `.env.local` and set values:
 NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_ANON_KEY=
 SUPABASE_SERVICE_ROLE_KEY=
+DIRECT_URL=
 ```
 
 Optional E2E credentials:
@@ -113,35 +114,19 @@ E2E_ADMIN_TEST_PASSWORD=
 
 ## Database setup
 
-Apply migrations in order:
+Use the automated setup flow:
 
-1. `supabase/migrations/00000000000001_auth_profiles.sql`
-2. `supabase/migrations/00000000000002_risks.sql`
-3. `supabase/migrations/00000000000003_controls.sql`
-4. `supabase/migrations/00000000000004_action_plans.sql`
-5. `supabase/migrations/00000000000005_evidence.sql`
-6. `supabase/migrations/00000000000006_framework_mappings.sql`
-7. `supabase/migrations/00000000000007_audit_log.sql`
+```bash
+npm run db:setup
+```
 
-Run seed:
+This command:
 
-- `supabase/seed/seed.sql`
-
-Role seed mapping by email:
-
-- `admin@open-grc.local` -> `admin`
-- `manager@open-grc.local` -> `manager`
-- `contributor@open-grc.local` -> `contributor`
-- any other user -> `viewer`
-
-Create those users in Supabase Auth first, then run seed.
-
-Suggested migration/seed workflow:
-
-1. Open Supabase SQL Editor.
-2. Execute each migration file in order.
-3. Execute `supabase/seed/seed.sql`.
-4. Validate that demo users in `profiles` received expected roles.
+- applies all migrations in `supabase/migrations`
+- ensures test users exist in Supabase Auth
+- assigns expected roles in `profiles`
+- seeds baseline data from `supabase/seed/seed.sql`
+- backfills seed-dependent action/evidence rows when needed
 
 ## Run locally
 
@@ -156,10 +141,9 @@ Open `http://localhost:3000`.
 
 1. Install dependencies with `npm install`.
 2. Configure `.env.local` with Supabase keys.
-3. Apply SQL migrations and seed.
-4. Create test users in Supabase Auth.
-5. Start local server with `npm run dev`.
-6. Login with a seeded account and verify access by role.
+3. Run `npm run db:setup`.
+4. Start local server with `npm run dev`.
+5. Login with a seeded account and verify access by role.
 
 ## Quality commands
 
@@ -168,7 +152,28 @@ npm run lint
 npm run typecheck
 npm run format:check
 npm run test:e2e
+npm run test:e2e:parallel
+npm run test:e2e:ci
 ```
+
+## CI workflow
+
+GitHub Actions workflow:
+
+- `.github/workflows/e2e.yml`
+
+Required repository secrets:
+
+- `NEXT_PUBLIC_SUPABASE_URL`
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+- `SUPABASE_SERVICE_ROLE_KEY`
+- `DIRECT_URL`
+
+The workflow runs:
+
+1. `npm run lint`
+2. `npm run typecheck`
+3. `npm run test:e2e:ci` (`db:setup` + serial E2E)
 
 ## Operations notes
 
@@ -182,6 +187,8 @@ npm run test:e2e
   - linked-record existence checks before write operations
   - normalized user-facing error messages for common database errors
 - Audit log events are best-effort and do not block core create/update/archive operations.
+- Default E2E run is serial (`npm run test:e2e`) for deterministic CI/dev baselines.
+- `npm run test:e2e:parallel` is available for faster local stress runs.
 
 ## Notes
 
