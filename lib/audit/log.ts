@@ -30,11 +30,13 @@ export async function recordAuditEvent(input: {
   entityId: string;
   action: AuditAction;
   actorProfileId: string;
+  organizationId: string;
   summary?: Record<string, unknown>;
 }) {
   const supabase = await createSupabaseServerClient();
 
   const { error } = await supabase.from("audit_log").insert({
+    organization_id: input.organizationId,
     entity_type: input.entityType,
     entity_id: input.entityId,
     action: input.action,

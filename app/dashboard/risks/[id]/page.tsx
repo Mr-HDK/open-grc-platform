@@ -8,6 +8,7 @@ import { buttonVariants } from "@/components/ui/button";
 import { EvidenceListSection } from "@/components/evidence/evidence-list-section";
 import { getAuditEntries } from "@/lib/audit/log";
 import { requireSessionProfile } from "@/lib/auth/profile";
+import { getEvidenceSignedUrlById } from "@/lib/evidence/signed-url";
 import { hasRole } from "@/lib/permissions/roles";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
@@ -31,6 +32,7 @@ type EvidenceRow = {
   id: string;
   title: string;
   file_name: string;
+  file_path: string;
   file_size: number;
   created_at: string;
 };
@@ -78,7 +80,7 @@ async function getRiskEvidence(riskId: string) {
   const supabase = await createSupabaseServerClient();
   const { data } = await supabase
     .from("evidence")
-    .select("id, title, file_name, file_size, created_at")
+    .select("id, title, file_name, file_path, file_size, created_at")
     .eq("risk_id", riskId)
     .is("archived_at", null)
     .order("created_at", { ascending: false })
@@ -160,6 +162,7 @@ export default async function RiskDetailPage({
     getRiskEvidence(risk.id),
     getAuditEntries("risk", risk.id),
   ]);
+  const evidenceDownloadUrls = await getEvidenceSignedUrlById(evidence);
 
   return (
     <div className="space-y-6">
@@ -290,7 +293,10 @@ export default async function RiskDetailPage({
       <EvidenceListSection
         title="Evidence"
         emptyMessage="No evidence linked to this risk."
-        items={evidence}
+        items={evidence.map((item) => ({
+          ...item,
+          download_url: evidenceDownloadUrls.get(item.id) ?? null,
+        }))}
         createHref={`/dashboard/evidence/new?riskId=${risk.id}`}
         canCreate={canEdit}
       />

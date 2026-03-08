@@ -57,6 +57,50 @@ function runSupabase(args) {
   }
 }
 
+function extractProjectRefFromApiUrl(apiUrl) {
+  try {
+    const parsed = new URL(apiUrl);
+    const match = parsed.hostname.match(/^([a-z0-9-]+)\.supabase\.co$/i);
+    return match ? match[1] : null;
+  } catch {
+    return null;
+  }
+}
+
+function extractProjectRefFromDirectUrl(dbUrl) {
+  try {
+    const parsed = new URL(dbUrl);
+    const userRefMatch = parsed.username.match(/^postgres\.([a-z0-9-]+)$/i);
+    if (userRefMatch) {
+      return userRefMatch[1];
+    }
+
+    const hostRefMatch = parsed.hostname.match(/^db\.([a-z0-9-]+)\.supabase\.co$/i);
+    if (hostRefMatch) {
+      return hostRefMatch[1];
+    }
+
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+function assertMatchingProjectRefs(env) {
+  const apiRef = extractProjectRefFromApiUrl(env.NEXT_PUBLIC_SUPABASE_URL);
+  const dbRef = extractProjectRefFromDirectUrl(env.DIRECT_URL);
+
+  if (!apiRef || !dbRef) {
+    return;
+  }
+
+  if (apiRef !== dbRef) {
+    throw new Error(
+      `DIRECT_URL project ref (${dbRef}) does not match NEXT_PUBLIC_SUPABASE_URL project ref (${apiRef}). Update DIRECT_URL to target the same Supabase project.`,
+    );
+  }
+}
+
 async function ensureUsersAndRoles(env) {
   const supabase = createClient(env.NEXT_PUBLIC_SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY, {
     auth: { persistSession: false },
@@ -345,6 +389,8 @@ async function main() {
   if (missing.length > 0) {
     throw new Error(`Missing required env vars: ${missing.join(", ")}`);
   }
+
+  assertMatchingProjectRefs(env);
 
   console.log("1/4 Apply migrations");
   runSupabase(["db", "push", "--db-url", env.DIRECT_URL, "--yes"]);

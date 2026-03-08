@@ -8,6 +8,7 @@ import { buttonVariants } from "@/components/ui/button";
 import { EvidenceListSection } from "@/components/evidence/evidence-list-section";
 import { getAuditEntries } from "@/lib/audit/log";
 import { requireSessionProfile } from "@/lib/auth/profile";
+import { getEvidenceSignedUrlById } from "@/lib/evidence/signed-url";
 import { hasRole } from "@/lib/permissions/roles";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { isOverdueAction } from "@/lib/validators/action-plan";
@@ -34,6 +35,7 @@ type EvidenceRow = {
   id: string;
   title: string;
   file_name: string;
+  file_path: string;
   file_size: number;
   created_at: string;
 };
@@ -101,7 +103,7 @@ async function getActionPlanEvidence(actionPlanId: string) {
   const supabase = await createSupabaseServerClient();
   const { data } = await supabase
     .from("evidence")
-    .select("id, title, file_name, file_size, created_at")
+    .select("id, title, file_name, file_path, file_size, created_at")
     .eq("action_plan_id", actionPlanId)
     .is("archived_at", null)
     .order("created_at", { ascending: false })
@@ -137,6 +139,7 @@ export default async function ActionPlanDetailPage({
     getActionPlanEvidence(actionPlan.id),
     getAuditEntries("action_plan", actionPlan.id),
   ]);
+  const evidenceDownloadUrls = await getEvidenceSignedUrlById(evidence);
 
   const overdue = isOverdueAction(actionPlan.target_date, actionPlan.status);
 
@@ -212,7 +215,10 @@ export default async function ActionPlanDetailPage({
       <EvidenceListSection
         title="Evidence"
         emptyMessage="No evidence linked to this action plan."
-        items={evidence}
+        items={evidence.map((item) => ({
+          ...item,
+          download_url: evidenceDownloadUrls.get(item.id) ?? null,
+        }))}
         createHref={`/dashboard/evidence/new?actionPlanId=${actionPlan.id}`}
         canCreate={canEdit}
       />

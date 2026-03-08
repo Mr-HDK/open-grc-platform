@@ -122,7 +122,7 @@ export async function createEvidenceAction(formData: FormData) {
   }
 
   const file = fileResult.file;
-  const path = buildEvidenceStoragePath(profile.id, file.name);
+  const path = buildEvidenceStoragePath(profile.id, profile.organizationId, file.name);
 
   const supabase = await createSupabaseServerClient();
   const { error: uploadError } = await supabase.storage
@@ -146,6 +146,7 @@ export async function createEvidenceAction(formData: FormData) {
         fileSize: file.size,
       },
       profile.id,
+      profile.organizationId,
     ),
   );
 
@@ -158,7 +159,7 @@ export async function createEvidenceAction(formData: FormData) {
 }
 
 export async function archiveEvidenceAction(formData: FormData) {
-  await requireSessionProfile("manager");
+  const profile = await requireSessionProfile("manager");
 
   const evidenceIdResult = evidenceIdSchema.safeParse(formData.get("evidenceId"));
 
@@ -171,6 +172,7 @@ export async function archiveEvidenceAction(formData: FormData) {
     .from("evidence")
     .update({ archived_at: new Date().toISOString() })
     .eq("id", evidenceIdResult.data)
+    .eq("organization_id", profile.organizationId)
     .is("archived_at", null);
 
   if (error) {

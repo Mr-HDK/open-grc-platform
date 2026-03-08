@@ -29,6 +29,7 @@ const errorMessageByCode: Record<string, string> = {
   invalid_credentials: "Invalid credentials. Please try again.",
   missing_credentials: "Email and password are required.",
   profile_missing: "Profile bootstrap failed. Verify SQL migration and seed.",
+  organization_missing: "Organization context is missing. Re-run database setup and migrations.",
 };
 
 export default async function LoginPage({

@@ -36,6 +36,7 @@ Internal GRC MVP scaffold based on Next.js App Router, TypeScript, Tailwind, and
   - Supabase Storage upload to `evidence` bucket
   - metadata + links to risk/control/action
   - evidence registry list + filters
+  - signed download links with short-lived URL expiration
   - simple archive flow
   - evidence sections on risk/control/action detail pages
 - Framework Mappings module:
@@ -192,6 +193,7 @@ The workflow runs:
   - `contributor+` for risks/controls/actions/evidence creation and updates
   - `manager+` for evidence archive updates
   - `admin` for framework mapping writes
+- Organization scoping is enforced in database defaults and RLS policies for transactional entities.
 - Audit log events are best-effort and do not block core create/update/archive operations.
 - Default E2E run is serial (`npm run test:e2e`) for deterministic CI/dev baselines.
 - `npm run test:e2e:parallel` is available for faster local stress runs.
@@ -205,7 +207,5 @@ The workflow runs:
 ## Post-MVP TODO
 
 - Add dedicated E2E coverage for audit log history entries.
-- Add organization scoping (`organization_id`) in policies and queries.
-- Add download/view links for evidence files with signed URL expiration controls.
 - Add optimistic UI feedback for form submissions (pending/success state).
 - Add an admin settings page for role reassignment and user lifecycle.

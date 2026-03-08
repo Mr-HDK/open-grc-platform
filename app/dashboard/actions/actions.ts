@@ -100,6 +100,7 @@ export async function createActionPlanAction(formData: FormData) {
   const supabase = await createSupabaseServerClient();
   const mutation = {
     ...buildActionPlanMutation(parsed.data, profile.id),
+    organization_id: profile.organizationId,
     created_by: profile.id,
   };
 
@@ -120,6 +121,7 @@ export async function createActionPlanAction(formData: FormData) {
     entityId: data.id,
     action: "create",
     actorProfileId: profile.id,
+    organizationId: profile.organizationId,
     summary: {
       status: mutation.status,
       priority: mutation.priority,
@@ -160,6 +162,7 @@ export async function updateActionPlanAction(formData: FormData) {
     .from("action_plans")
     .update(mutation)
     .eq("id", actionPlanIdResult.data)
+    .eq("organization_id", profile.organizationId)
     .is("deleted_at", null);
 
   if (error) {
@@ -171,6 +174,7 @@ export async function updateActionPlanAction(formData: FormData) {
     entityId: actionPlanIdResult.data,
     action: "update",
     actorProfileId: profile.id,
+    organizationId: profile.organizationId,
     summary: {
       status: mutation.status,
       priority: mutation.priority,
@@ -200,6 +204,7 @@ export async function archiveActionPlanAction(formData: FormData) {
       updated_by: profile.id,
     })
     .eq("id", actionPlanIdResult.data)
+    .eq("organization_id", profile.organizationId)
     .is("deleted_at", null);
 
   if (error) {
@@ -211,6 +216,7 @@ export async function archiveActionPlanAction(formData: FormData) {
     entityId: actionPlanIdResult.data,
     action: "soft_delete",
     actorProfileId: profile.id,
+    organizationId: profile.organizationId,
     summary: { deleted_at: deletedAt },
   }).catch(() => undefined);
 

@@ -42,8 +42,10 @@ export function buildEvidenceMutation(
     fileSize: number;
   },
   uploaderProfileId: string,
+  organizationId: string,
 ) {
   return {
+    organization_id: organizationId,
     title: payload.title,
     description: payload.description,
     risk_id: payload.riskId,
@@ -57,7 +59,11 @@ export function buildEvidenceMutation(
   };
 }
 
-export function buildEvidenceStoragePath(profileId: string, fileName: string) {
+export function buildEvidenceStoragePath(
+  profileId: string,
+  organizationId: string,
+  fileName: string,
+) {
   const sanitized = fileName.replace(/[^a-zA-Z0-9._-]/g, "_");
-  return `${profileId}/${crypto.randomUUID()}-${sanitized}`;
+  return `${organizationId}/${profileId}/${crypto.randomUUID()}-${sanitized}`;
 }

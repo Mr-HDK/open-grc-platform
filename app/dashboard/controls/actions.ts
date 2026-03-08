@@ -131,6 +131,7 @@ export async function createControlAction(formData: FormData) {
   const supabase = await createSupabaseServerClient();
   const mutation = {
     ...buildControlMutation(parsed.data, profile.id),
+    organization_id: profile.organizationId,
     created_by: profile.id,
   };
 
@@ -157,6 +158,7 @@ export async function createControlAction(formData: FormData) {
     entityId: data.id,
     action: "create",
     actorProfileId: profile.id,
+    organizationId: profile.organizationId,
     summary: {
       code: mutation.code,
       effectiveness_status: mutation.effectiveness_status,
@@ -210,6 +212,7 @@ export async function updateControlAction(formData: FormData) {
     .from("controls")
     .update(mutation)
     .eq("id", controlIdResult.data)
+    .eq("organization_id", profile.organizationId)
     .is("deleted_at", null);
 
   if (error) {
@@ -229,6 +232,7 @@ export async function updateControlAction(formData: FormData) {
     entityId: controlIdResult.data,
     action: "update",
     actorProfileId: profile.id,
+    organizationId: profile.organizationId,
     summary: {
       effectiveness_status: mutation.effectiveness_status,
       review_frequency: mutation.review_frequency,
@@ -258,6 +262,7 @@ export async function archiveControlAction(formData: FormData) {
       updated_by: profile.id,
     })
     .eq("id", controlIdResult.data)
+    .eq("organization_id", profile.organizationId)
     .is("deleted_at", null);
 
   if (error) {
@@ -269,6 +274,7 @@ export async function archiveControlAction(formData: FormData) {
     entityId: controlIdResult.data,
     action: "soft_delete",
     actorProfileId: profile.id,
+    organizationId: profile.organizationId,
     summary: { deleted_at: deletedAt },
   }).catch(() => undefined);
 

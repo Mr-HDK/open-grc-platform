@@ -5,6 +5,7 @@ import { buttonVariants } from "@/components/ui/button";
 import { FeedbackAlert } from "@/components/ui/feedback-alert";
 import { Input } from "@/components/ui/input";
 import { requireSessionProfile } from "@/lib/auth/profile";
+import { getEvidenceSignedUrlById } from "@/lib/evidence/signed-url";
 import { hasRole } from "@/lib/permissions/roles";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
@@ -12,6 +13,7 @@ type EvidenceListItem = {
   id: string;
   title: string;
   file_name: string;
+  file_path: string;
   file_size: number;
   mime_type: string;
   risk_id: string | null;
@@ -51,7 +53,7 @@ export default async function EvidencePage({
 
   let query = supabase
     .from("evidence")
-    .select("id, title, file_name, file_size, mime_type, risk_id, control_id, action_plan_id, created_at")
+    .select("id, title, file_name, file_path, file_size, mime_type, risk_id, control_id, action_plan_id, created_at")
     .is("archived_at", null)
     .order("created_at", { ascending: false });
 
@@ -72,6 +74,8 @@ export default async function EvidencePage({
   }
 
   const { data, error } = await query.returns<EvidenceListItem[]>();
+  const evidenceRows = data ?? [];
+  const evidenceDownloadUrls = await getEvidenceSignedUrlById(evidenceRows);
 
   return (
     <div className="space-y-6">
@@ -139,10 +143,24 @@ export default async function EvidencePage({
             </tr>
           </thead>
           <tbody>
-            {(data ?? []).map((item) => (
+            {evidenceRows.map((item) => (
               <tr key={item.id} className="border-b last:border-b-0">
                 <td className="px-4 py-3 font-medium">{item.title}</td>
-                <td className="px-4 py-3 text-muted-foreground">{item.file_name}</td>
+                <td className="px-4 py-3 text-muted-foreground">
+                  <p>{item.file_name}</p>
+                  {evidenceDownloadUrls.get(item.id) ? (
+                    <a
+                      href={evidenceDownloadUrls.get(item.id) ?? undefined}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="mt-1 inline-block text-xs font-medium underline"
+                    >
+                      Download
+                    </a>
+                  ) : (
+                    <span className="mt-1 inline-block text-xs">Download unavailable</span>
+                  )}
+                </td>
                 <td className="px-4 py-3 text-muted-foreground">{formatFileSize(item.file_size)}</td>
                 <td className="px-4 py-3 text-xs text-muted-foreground">
                   <div>{item.risk_id ? "Risk" : "-"}</div>

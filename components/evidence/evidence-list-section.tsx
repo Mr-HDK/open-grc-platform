@@ -6,6 +6,7 @@ type EvidenceListItem = {
   file_name: string;
   file_size: number;
   created_at: string;
+  download_url?: string | null;
 };
 
 type EvidenceListProps = {
@@ -59,6 +60,20 @@ export function EvidenceListSection({
               <p className="mt-1 text-xs text-muted-foreground">
                 Added {new Date(item.created_at).toLocaleString()}
               </p>
+              {item.download_url ? (
+                <p className="mt-2">
+                  <a
+                    href={item.download_url}
+                    className="text-xs font-medium text-muted-foreground underline"
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    Download file
+                  </a>
+                </p>
+              ) : (
+                <p className="mt-2 text-xs text-muted-foreground">Download unavailable.</p>
+              )}
             </li>
           ))}
         </ul>

@@ -63,6 +63,7 @@ export async function createRiskAction(formData: FormData) {
   const supabase = await createSupabaseServerClient();
   const mutation = {
     ...buildRiskMutation(parsed.data, profile.id),
+    organization_id: profile.organizationId,
     created_by: profile.id,
   };
   const score = calculateRiskScore(parsed.data.impact, parsed.data.likelihood);
@@ -79,6 +80,7 @@ export async function createRiskAction(formData: FormData) {
     entityId: data.id,
     action: "create",
     actorProfileId: profile.id,
+    organizationId: profile.organizationId,
     summary: {
       title: mutation.title,
       status: mutation.status,
@@ -120,6 +122,7 @@ export async function updateRiskAction(formData: FormData) {
     .from("risks")
     .update(mutation)
     .eq("id", riskIdResult.data)
+    .eq("organization_id", profile.organizationId)
     .is("deleted_at", null);
 
   if (error) {
@@ -131,6 +134,7 @@ export async function updateRiskAction(formData: FormData) {
     entityId: riskIdResult.data,
     action: "update",
     actorProfileId: profile.id,
+    organizationId: profile.organizationId,
     summary: {
       status: mutation.status,
       score,
@@ -160,6 +164,7 @@ export async function archiveRiskAction(formData: FormData) {
       updated_by: profile.id,
     })
     .eq("id", riskIdResult.data)
+    .eq("organization_id", profile.organizationId)
     .is("deleted_at", null);
 
   if (error) {
@@ -171,6 +176,7 @@ export async function archiveRiskAction(formData: FormData) {
     entityId: riskIdResult.data,
     action: "soft_delete",
     actorProfileId: profile.id,
+    organizationId: profile.organizationId,
     summary: { deleted_at: deletedAt },
   }).catch(() => undefined);
 
