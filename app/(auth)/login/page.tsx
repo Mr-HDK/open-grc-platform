@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { getSessionUser } from "@/lib/auth/session";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 async function signIn(formData: FormData) {
@@ -24,13 +25,25 @@ async function signIn(formData: FormData) {
   redirect("/dashboard");
 }
 
+const errorMessageByCode: Record<string, string> = {
+  invalid_credentials: "Invalid credentials. Please try again.",
+  missing_credentials: "Email and password are required.",
+  profile_missing: "Profile bootstrap failed. Verify SQL migration and seed.",
+};
+
 export default async function LoginPage({
   searchParams,
 }: {
   searchParams: Promise<{ error?: string }>;
 }) {
+  const user = await getSessionUser();
+
+  if (user) {
+    redirect("/dashboard");
+  }
+
   const params = await searchParams;
-  const hasError = Boolean(params.error);
+  const errorMessage = params.error ? errorMessageByCode[params.error] : null;
 
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-md items-center px-6 py-12">
@@ -40,9 +53,9 @@ export default async function LoginPage({
           Use a Supabase user from your project.
         </p>
 
-        {hasError ? (
+        {errorMessage ? (
           <p className="mt-4 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">
-            Invalid credentials. Please try again.
+            {errorMessage}
           </p>
         ) : null}
 

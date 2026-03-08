@@ -1,11 +1,14 @@
 import Link from "next/link";
 
+import { type Role } from "@/lib/permissions/roles";
+
 type AppShellProps = {
   userEmail: string;
+  userRole: Role;
   children: React.ReactNode;
 };
 
-const navLinks = [
+const baseNavLinks = [
   { href: "/dashboard", label: "Dashboard" },
   { href: "/dashboard/risks", label: "Risks" },
   { href: "/dashboard/controls", label: "Controls" },
@@ -14,7 +17,19 @@ const navLinks = [
   { href: "/dashboard/frameworks", label: "Frameworks" },
 ];
 
-export function AppShell({ userEmail, children }: AppShellProps) {
+const roleBadgeClass: Record<Role, string> = {
+  admin: "bg-slate-900 text-white",
+  manager: "bg-slate-200 text-slate-900",
+  contributor: "bg-sky-100 text-sky-700",
+  viewer: "bg-zinc-100 text-zinc-700",
+};
+
+export function AppShell({ userEmail, userRole, children }: AppShellProps) {
+  const navLinks =
+    userRole === "admin"
+      ? [...baseNavLinks, { href: "/dashboard/settings", label: "Settings" }]
+      : baseNavLinks;
+
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,_rgba(15,23,42,0.04),_transparent_45%)]">
       <div className="mx-auto grid min-h-screen w-full max-w-7xl grid-cols-1 lg:grid-cols-[240px_1fr]">
@@ -23,6 +38,11 @@ export function AppShell({ userEmail, children }: AppShellProps) {
             Open GRC
           </p>
           <p className="mt-2 truncate text-sm text-muted-foreground">{userEmail}</p>
+          <p
+            className={`mt-3 inline-flex rounded-full px-2 py-1 text-xs font-semibold uppercase tracking-wide ${roleBadgeClass[userRole]}`}
+          >
+            {userRole}
+          </p>
 
           <nav className="mt-8 space-y-2">
             {navLinks.map((link) => (
