@@ -1,135 +1,121 @@
-# PRD - MVP GRC / Risk Management App
+﻿# PRD - Internal GRC Platform
+
+Note: the filename is kept for continuity, but the product is no longer framed as a greenfield initial build.
 
 ## 1. Vision
 
-Créer une application légère de gouvernance, risque et conformité qui remplace les fichiers dispersés et donne une vue centrale sur les risques, contrôles, actions, preuves et référentiels.
+Creer une application legere de gouvernance, risque et conformite qui remplace les fichiers disperses et donne une vue centrale sur les risques, controles, actions, preuves et referentiels.
 
-## 2. Problème
+## 2. Probleme
 
-Les équipes gèrent souvent les risques dans Excel, Notion ou des documents isolés. Résultat:
+Les equipes gerent souvent les risques dans Excel, Notion ou des documents isoles. Resultat:
 
-- données non centralisées
+- donnees non centralisees
 - versions contradictoires
-- faible traçabilité
+- faible tracabilite
 - suivi d'actions incomplet
-- difficulté à préparer audits et comités
-- pas de vue consolidée sur l'exposition au risque
+- difficulte a preparer audits et comites
+- pas de vue consolidee sur l'exposition au risque
 
 ## 3. Utilisateurs cibles
 
 ### Admin
-- configure les référentiels de base
-- gère les rôles
+- configure les referentiels de base
+- gere les roles
+- gere le cycle de vie simple des utilisateurs
 - voit tout
 
 ### Risk Manager
-- crée et suit les risques
+- cree et suit les risques
 - assigne les actions
-- suit les contrôles
-- prépare le reporting
+- suit les controles
+- prepare le reporting
 
 ### Contributor
-- met à jour risques, contrôles, actions, preuves selon droits
+- met a jour risques, controles, actions, preuves selon droits
 
 ### Viewer
 - consulte les tableaux de bord et fiches
 
 ## 4. Jobs to be done
 
-- Enregistrer un risque de façon propre et comparable
-- Relier un risque à des contrôles et à des actions
-- Stocker des preuves liées à des contrôles
-- Mapper les contrôles à des frameworks
-- Produire rapidement une vue de synthèse pour management / audit
+- Enregistrer un risque de facon propre et comparable
+- Relier un risque a des controles et a des actions
+- Stocker des preuves liees a des controles
+- Mapper les controles a des frameworks
+- Produire rapidement une vue de synthese pour management / audit
+- Demarrer plus vite grace a des bibliotheques ou imports reutilisables
+- Extraire les donnees utiles pour pilotage et audit
 
-## 5. Périmètre MVP
+## 5. Base deja livree
 
-### Inclus
+La base actuelle couvre:
+
 - authentification
-- rôles simples
+- roles simples
 - registre des risques
 - scoring simple
-- catalogue de contrôles
+- catalogue de controles
 - plans d'actions
 - upload de preuves
 - mapping de frameworks
-- dashboard résumé
+- dashboard resume
 - audit log minimal
 
-### Exclus du MVP
-- questionnaires avancés
-- moteur d'approbation configurable
-- API publique complète
-- notifications multicanal avancées
-- multi-entité complexe
-- scoring probabiliste avancé
-- gestion des tiers poussée
+## 6. Phase actuelle
 
-## 6. User stories principales
+La phase courante vise a etendre la base avec les chantiers suivants:
 
-### Risques
-- En tant que manager, je peux créer un risque avec titre, description, impact, likelihood, propriétaire, échéance et statut.
-- En tant que manager, je peux filtrer les risques par statut, propriétaire, catégorie et niveau.
-- En tant que viewer, je peux voir une fiche risque avec ses contrôles, actions et preuves associées.
+### Priorite 1
+- admin settings
+- gestion des roles et du cycle de vie utilisateur
+- feedback UX plus clair
+- couverture E2E complementaire sur les parcours critiques
 
-### Contrôles
-- En tant que manager, je peux créer un contrôle avec type, objectif, fréquence, propriétaire et efficacité.
-- En tant que manager, je peux relier un contrôle à plusieurs risques.
+### Priorite 2
+- bibliotheques de risques et de controles
+- imports simples
+- exports de reporting et audit
 
-### Actions
-- En tant que contributor, je peux mettre à jour le statut d'une action.
-- En tant que manager, je peux voir les actions en retard.
+### Priorite 3
+- commentaires et activity trail plus riche
+- notifications utiles et proportionnees
+- revues periodiques de controles
 
-### Evidence
-- En tant que contributor, je peux déposer une preuve liée à un contrôle ou à un risque.
-- En tant que viewer, je peux voir l'historique et les métadonnées d'une preuve.
+### Priorite 4
+- modules additionnels a forte valeur, par exemple incidents
 
-### Frameworks
-- En tant qu'admin, je peux rattacher un contrôle à un ou plusieurs référentiels.
+## 7. Hors phase courante
 
-### Dashboard
-- En tant que manager, je veux voir les risques ouverts, les risques élevés, les actions en retard et la distribution par statut.
+- moteur d'approbation configurable generique
+- architecture distribuee
+- multi-entite complexe de type SaaS enterprise
+- scoring probabiliste avance
+- API publique complete
+- automatisation lourde sans besoin valide
 
-## 7. Mesures de succès MVP
-
-- création d'un risque en moins de 2 minutes
-- préparation d'une vue comité en moins de 10 minutes
-- visibilité complète des actions en retard
-- adoption par une première équipe pilote
-
-## 8. Règles métier simples
+## 8. Regles metier simples
 
 - `risk_score = impact * likelihood`
-- impact et likelihood sur une échelle 1 à 5
-- niveau dérivé: low, medium, high, critical
-- un risque peut avoir 0..n contrôles
-- un contrôle peut couvrir 0..n risques
-- une action peut être liée à un risque, un contrôle, ou les deux
-- une preuve doit avoir au moins une entité cible
+- impact et likelihood sur une echelle 1 a 5
+- niveau derive: low, medium, high, critical
+- un risque peut avoir 0..n controles
+- un controle peut couvrir 0..n risques
+- une action peut etre liee a un risque, un controle, ou les deux
+- une preuve doit avoir au moins une entite cible
 
-## 9. Priorités produit
+## 9. Mesures de succes de la phase courante
 
-P0:
-- auth
-- risks CRUD
-- controls CRUD
-- action plans CRUD
-- dashboard simple
-
-P1:
-- evidence
-- framework mapping
-- audit log
-
-P2:
-- exports
-- notifications
-- commentaires
+- reduction du temps de mise en place d'un registre exploitable
+- preparation plus rapide d'un reporting management ou audit
+- meilleure administrabilite de l'application
+- meilleure reutilisation via packs ou imports
+- adoption par une equipe pilote sur un usage reel
 
 ## 10. Risques projet
 
-- sur-architecture trop tôt
-- modèle métier trop riche dès le départ
+- sur-architecture trop tot
+- modele metier trop riche d'un coup
 - permissions trop complexes
-- dette UI si le CRUD est bricolé sans standards
-- absence de seed/demo rendant les tests difficiles
+- dette UI si les nouvelles features sont ajoutees sans standard
+- ajout de modules avant d'avoir fiabilise l'existant

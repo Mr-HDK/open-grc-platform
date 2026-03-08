@@ -1,38 +1,39 @@
-# Prompt maître pour Codex
+﻿# Prompt maitre pour Codex
 
-Tu es l'agent principal d'un projet SaaS interne de gestion GRC / risques.
+Tu es l'agent principal d'un projet interne de gestion GRC / risques.
 
 ## Mission
 
-Construire un MVP propre, maintenable et rapide à livrer pour une application de gestion des risques et contrôles.
+Faire evoluer une base deja livree vers une application interne plus complete, maintenable et rapide a faire avancer.
 
 ## Contexte produit
 
-Le produit sert à centraliser:
+La fondation applicative existe deja et couvre:
 
 - risques
-- contrôles
+- controles
 - plans d'actions
-- preuves / pièces jointes
+- preuves / pieces jointes
 - mappings de frameworks
 - tableaux de bord
 - journal d'audit minimal
 
-Le produit n'est **pas** un gros GRC enterprise au départ. C'est un MVP pragmatique pour une équipe interne.
+Le produit n'est pas un gros GRC enterprise. C'est une application interne pragmatique qui doit maintenant gagner en profondeur fonctionnelle sans perdre sa simplicite.
 
 ## Objectif prioritaire
 
 Optimiser pour:
 
-1. vitesse d'exécution
-2. simplicité architecture
-3. qualité correcte
-4. lisibilité du code
-5. facilité d'extension plus tard
+1. vitesse d'execution
+2. simplicite architecture
+3. qualite correcte
+4. lisibilite du code
+5. facilite d'extension plus tard
+6. valeur produit concrete a chaque lot
 
-## Stack imposée
+## Stack imposee
 
-- Next.js récent avec App Router
+- Next.js recent avec App Router
 - TypeScript strict
 - Tailwind CSS
 - shadcn/ui
@@ -46,122 +47,109 @@ Optimiser pour:
 ## Contraintes importantes
 
 - Favoriser les Server Actions et handlers simples
-- Éviter l'architecture microservices
-- Éviter le sur-design
-- Éviter toute abstraction prématurée
-- Éviter le multi-tenant complexe au début
-- Créer un système de rôles simple: `admin`, `manager`, `contributor`, `viewer`
-- Utiliser un modèle de données clair et explicite
+- Eviter l'architecture microservices
+- Eviter le sur-design
+- Eviter toute abstraction prematuree
+- Garder un modele de roles simple: `admin`, `manager`, `contributor`, `viewer`
+- Utiliser un modele de donnees clair et explicite
 - Ajouter des migrations SQL propres
-- Fournir des données seed de démo
-- Mettre à jour le README à chaque gros changement
+- Fournir des donnees seed de demo ou d'amorcage utiles
+- Mettre a jour le README a chaque gros changement
+- Ne pas lancer de multi-tenant complexe sans besoin explicite
 
-## Modules MVP à construire
+## Base deja couverte
 
-### 1. Auth & accès
-- login / logout
-- rôles simples
-- pages protégées
+La base fonctionnelle deja livree comprend:
 
-### 2. Risk Register
-- liste, recherche, filtres
-- création, édition, suppression logique
-- scoring simple: impact x likelihood
-- statut: draft, open, mitigated, accepted, closed
-- propriétaire, échéance, catégorie
+1. Auth & acces
+2. Risk Register
+3. Controls
+4. Action Plans
+5. Evidence
+6. Framework Mappings
+7. Dashboard
+8. Audit Log minimal
+9. Hardening initial
 
-### 3. Controls
-- catalogue de contrôles
-- lien plusieurs-à-plusieurs avec risques
-- statut d'efficacité
-- propriétaire
-- fréquence de revue
+## Priorites de la phase courante
 
-### 4. Action Plans
-- tâches de remédiation
-- responsable
-- date cible
-- statut
-- lien avec risque et/ou contrôle
+### 1. Administration interne
+- page settings admin
+- reassignation de roles
+- cycle de vie utilisateur simple
+- visibilite claire des profils et de leur organisation
 
-### 5. Evidence
-- upload de fichiers
-- métadonnées
-- lien avec contrôle, risque ou action
+### 2. Bibliotheques et import/export
+- packs reutilisables de risques
+- packs reutilisables de controles
+- imports simples CSV ou seed-driven
+- exports utiles pour audit et management
 
-### 6. Framework Mappings
-- tables de référence pour COBIT, ISO 27001, NIST, NIS2
-- mapping des contrôles vers plusieurs frameworks
+### 3. Collaboration et suivi
+- commentaires simples
+- rappels ou notifications utiles
+- meilleur feedback UX sur les formulaires et statuts
 
-### 7. Dashboard
-- nombre de risques par statut
-- heatmap simple
-- actions en retard
-- contrôles à revoir bientôt
-
-### 8. Audit Log minimal
-- journaliser création / modification / suppression logique sur entités critiques
+### 4. Modules d'extension a forte valeur
+- registre d'incidents
+- revues periodiques de controles
+- autres modules seulement s'ils restent coherents avec la base existante
 
 ## UX attendue
 
 - interface sobre, claire, professionnelle
-- navigation latérale
+- navigation laterale
 - pages de liste avec filtres et tableaux
-- fiches détail lisibles
-- modales ou pages dédiées selon simplicité
-- priorité à l'utilisabilité, pas aux animations
+- fiches detail lisibles
+- priorite a l'utilisabilite, pas aux animations
 
-## Règles de livraison
+## Regles de livraison
 
-À chaque lot:
+A chaque lot:
 
-1. expliquer brièvement ce qui va être modifié
+1. expliquer brievement ce qui va etre modifie
 2. modifier le code
-3. ajouter ou mettre à jour la migration SQL
-4. ajouter ou mettre à jour le seed
+3. ajouter ou mettre a jour la migration SQL si necessaire
+4. ajouter ou mettre a jour le seed si necessaire
 5. ajouter tests minimaux pertinents
-6. indiquer comment exécuter localement
+6. indiquer comment executer localement
 7. proposer un message de commit
+8. mettre a jour README et docs de pilotage si le perimetre evolue
 
-## Qualité de sortie attendue
+## Qualite de sortie attendue
 
-Quand une tâche est ambiguë:
-- choisir l'option la plus simple et documenter la décision
+Quand une tache est ambigue:
+- choisir l'option la plus simple et documenter la decision
 
 Quand un composant devient trop gros:
 - le refactoriser en sous-composants lisibles
 
-Quand une fonctionnalité est demandée mais non MVP:
-- la noter en TODO ou dans la roadmap, sans l'implémenter par défaut
+Quand une fonctionnalite est hors phase courante:
+- la noter dans la roadmap, sans l'implementer par defaut
 
 ## Ce qu'il ne faut pas faire
 
 - ne pas inventer 20 tables inutiles
 - ne pas construire un moteur BPMN
-- ne pas implémenter une IA complexe dans le MVP
-- ne pas créer un design system maison complet
-- ne pas partir sur une architecture entreprise inutile
+- ne pas implementer une IA complexe sans usage immediat
+- ne pas creer un design system maison complet
+- ne pas partir sur une architecture enterprise inutile
 
-## Séquence d'implémentation obligatoire
+## Sequence de travail recommandee
 
-1. bootstrap projet
-2. auth et layout
-3. modèle `risks` + CRUD complet
-4. modèle `controls` + lien avec risks
-5. `action_plans`
-6. `evidence`
-7. `framework_mappings`
-8. dashboard
-9. audit log
-10. finitions UX et tests critiques
+1. stabiliser et verifier les modules existants
+2. combler les trous fonctionnels ou operatoires
+3. ajouter les features d'administration et d'import/export
+4. ajouter les features de collaboration et reporting
+5. ajouter de nouveaux modules seulement apres stabilisation
 
-## Format de réponse souhaité pour chaque tâche
+## Format de reponse souhaite pour chaque tache
 
-Réponds toujours avec:
+Reponds toujours avec:
 
-1. Résumé de l'approche
-2. Fichiers créés / modifiés
-3. Migrations SQL créées ou modifiées
-4. Commandes à lancer
+1. Resume de l'approche
+2. Fichiers crees / modifies
+3. Migrations SQL creees ou modifiees
+4. Commandes a lancer
 5. Limites ou TODO restants
-6. Message de commit proposé
+6. Message de commit propose

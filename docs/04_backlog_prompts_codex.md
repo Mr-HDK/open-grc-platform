@@ -1,217 +1,159 @@
-# Backlog de prompts Codex
+﻿# Backlog de prompts Codex - Phase suivante
 
-Copie-colle ces prompts un par un.
+La base fonctionnelle initiale est deja livree. Utilise ces prompts pour faire evoluer l'application sans repartir de zero.
 
 ---
 
-## Prompt 1 - Bootstrap
+## Prompt 11 - Admin Settings
 
 ```text
 Lis docs/00_master_prompt_codex.md, docs/01_prd_mvp_grc.md et docs/02_architecture_technique.md.
 
-Initialise le projet complet pour un MVP GRC avec:
-- Next.js App Router
-- TypeScript strict
-- Tailwind
-- shadcn/ui
-- Supabase client setup
-- ESLint + Prettier
-- structure de dossiers claire
-- layout dashboard protégé
-- page d'accueil simple
-- README initial
-- .env.example
-
-Ajoute les scripts npm utiles.
-
-Ne construis aucun module métier complet pour l'instant.
-
-À la fin, donne:
-1. résumé
-2. fichiers créés
-3. commandes à lancer
-4. points restants
-5. message de commit
-```
-
----
-
-## Prompt 2 - Auth
-
-```text
-Lis les docs du projet puis implémente uniquement l'authentification et les permissions simples.
+Implemente maintenant uniquement le module Admin Settings.
 
 Attendus:
-- login/logout avec Supabase Auth
-- page login
-- protection des routes
-- gestion de rôles: admin, manager, contributor, viewer
-- helpers de permissions simples
-- seed ou mécanisme de bootstrap pour profils de test
-- README mis à jour
+- page settings reservee admin
+- liste des profils/utilisateurs
+- changement de role simple
+- garde-fous serveur et validation stricte
+- seed ou bootstrap minimal si utile
+- tests minimaux
+- README mis a jour
 
 Contraintes:
-- simple
-- lisible
+- ne reconstruis pas l'auth
+- reste simple
 - pas d'overengineering
 
-À la fin, fournis aussi un message de commit.
+A la fin, donne aussi un message de commit.
 ```
 
 ---
 
-## Prompt 3 - Risk Register
+## Prompt 12 - Libraries and Bundles
 
 ```text
-Lis les docs du projet puis implémente uniquement le module Risk Register.
+Lis les docs du projet puis implemente uniquement une premiere version des bibliotheques reutilisables.
 
 Attendus:
-- migration SQL pour table risks
-- seed de 12 risques réalistes
-- liste avec recherche et filtres
-- création / édition / détail
-- score impact x likelihood
-- niveau low/medium/high/critical
-- statuts draft/open/mitigated/accepted/closed
-- validation Zod
-- composants UI lisibles
-- test E2E minimal sur création d'un risque
-- README mis à jour
+- support de bundles de risques et/ou controles
+- structure de donnees simple et lisible
+- import applicatif ou seed-driven, pas de moteur complexe
+- au moins un bundle d'exemple utile
+- UI minimale pour appliquer un bundle
+- tests minimaux
+- README mis a jour
 
-Ne fais pas encore controls, evidence ou frameworks.
+Ne touche pas aux modules non necessaires.
 
 Donne aussi un message de commit.
 ```
 
 ---
 
-## Prompt 4 - Controls
+## Prompt 13 - Imports and Exports
 
 ```text
-Lis les docs puis implémente uniquement le module Controls.
+Lis les docs du projet puis implemente uniquement les flux d'import/export les plus utiles.
 
 Attendus:
-- migration SQL pour controls et table pivot risk_controls
-- CRUD de contrôles
-- lien contrôle <-> plusieurs risques
-- statut d'efficacité
-- propriétaire
-- fréquence de revue
-- vue détail d'un contrôle avec risques liés
-- seed réaliste
+- import simple CSV ou JSON pour risques/controles
+- export simple pour reporting management ou audit
+- validation serveur stricte
+- messages d'erreur clairs
 - tests minimaux
-- README mis à jour
+- README mis a jour
 
-Ne touche pas encore à evidence et frameworks sauf si requis par types.
+Reste pragmatique et n'ajoute pas de pipeline complexe.
 ```
 
 ---
 
-## Prompt 5 - Action Plans
+## Prompt 14 - Collaboration
 
 ```text
-Lis les docs puis implémente uniquement Action Plans.
+Lis les docs du projet puis implemente uniquement une couche de collaboration legere.
 
 Attendus:
-- migration SQL action_plans
-- création / édition / liste
-- rattachement à risque et/ou contrôle
-- statut
-- date cible
-- indicateur overdue
-- filtres utiles
-- seed
+- commentaires simples sur entites critiques
+- activity trail lisible si pertinent
+- permissions coherentes avec les roles existants
+- UI sobre
 - tests minimaux
-- README mis à jour
+- README mis a jour
+
+Pas de chat temps reel ni de systeme complexe.
 ```
 
 ---
 
-## Prompt 6 - Evidence
+## Prompt 15 - Notifications and Reminders
 
 ```text
-Lis les docs puis implémente uniquement Evidence.
+Lis les docs du projet puis implemente uniquement des notifications utiles et proportionnees.
 
 Attendus:
-- migration SQL evidence
-- upload fichier via Supabase Storage
-- métadonnées de preuve
-- rattachement à risque, contrôle ou action
-- liste des preuves sur pages détail
-- suppression logique ou archivage simple
-- seed si pertinent
-- README mis à jour
+- rappels pour actions en retard ou controles a revoir
+- mecanisme simple, sans sur-architecture
+- configuration minimale si necessaire
+- tests utiles
+- README mis a jour
+
+Ne construis pas un moteur de workflow.
+```
+
+---
+
+## Prompt 16 - Incident Register
+
+```text
+Lis les docs du projet puis implemente uniquement un module Incident Register coherent avec l'existant.
+
+Attendus:
+- migration SQL incidents
+- CRUD simple
+- lien possible avec risques et actions
+- statuts de base
+- tests minimaux
+- README mis a jour
+
+Ne change pas l'architecture globale.
+```
+
+---
+
+## Prompt 17 - Periodic Control Reviews
+
+```text
+Lis les docs du projet puis implemente uniquement les revues periodiques de controles.
+
+Attendus:
+- suivi des revues planifiees
+- statut de revue et date cible
+- lien avec controles existants
+- vue liste utile pour managers
+- tests minimaux
+- README mis a jour
 
 Reste minimal mais propre.
 ```
 
 ---
 
-## Prompt 7 - Framework Mappings
+## Prompt 18 - Targeted Hardening Round 2
 
 ```text
-Lis les docs puis implémente uniquement Framework Mappings.
+Relis tout le projet et effectue seulement un hardening cible sur la phase suivante.
 
 Attendus:
-- tables frameworks, framework_requirements, control_framework_mappings
-- seed pour COBIT, ISO 27001, NIST et NIS2 avec quelques entrées d'exemple
-- UI simple pour mapper un contrôle à plusieurs exigences
-- affichage des mappings sur fiche contrôle
-- README mis à jour
-
-Pas besoin d'un moteur complexe d'import.
-```
-
----
-
-## Prompt 8 - Dashboard
-
-```text
-Lis les docs puis implémente uniquement le dashboard MVP.
-
-Attendus:
-- cartes KPI
-- risques par statut
-- risques par niveau
-- heatmap simple impact x likelihood
-- actions en retard
-- contrôles à revoir bientôt
-- composants simples et propres
-- données reliées au vrai schéma
-- README mis à jour
-```
-
----
-
-## Prompt 9 - Audit Log
-
-```text
-Lis les docs puis implémente uniquement un audit log minimal.
-
-Attendus:
-- table audit_log
-- journalisation create/update/delete logique sur risks, controls, action_plans
-- affichage simple d'historique sur fiche détail
-- structure extensible mais simple
-- README mis à jour
-```
-
----
-
-## Prompt 10 - Hardening
-
-```text
-Relis tout le projet et effectue seulement un hardening ciblé.
-
-Attendus:
-- corriger incohérences TypeScript
+- corriger incoherences TypeScript
 - simplifier composants trop gros
-- améliorer messages d'erreur formulaires
-- améliorer accessibilité basique
-- vérifier permissions critiques
-- vérifier validations serveur
-- compléter README d'installation et d'exploitation
-- proposer liste concise de TODO post-MVP
+- ameliorer messages d'erreur formulaires
+- ameliorer accessibilite basique
+- verifier permissions critiques
+- verifier validations serveur
+- completer README d'installation et d'exploitation
+- proposer liste concise des prochains chantiers
 
 Ne change pas l'architecture globale.
 ```

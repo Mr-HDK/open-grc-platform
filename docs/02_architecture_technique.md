@@ -1,4 +1,4 @@
-# Architecture technique recommandée
+﻿# Architecture technique recommandee
 
 ## Principe
 
@@ -8,7 +8,7 @@ Pour un projet Codex-friendly, il faut une architecture:
 - lisible
 - testable
 - avec peu de services externes
-- facile à déployer
+- facile a deployer
 
 ## Stack retenue
 
@@ -18,13 +18,13 @@ Pour un projet Codex-friendly, il faut une architecture:
 - Tailwind
 - shadcn/ui
 
-### Backend simplifié
+### Backend simplifie
 - Server Actions
-- Route Handlers ponctuels si nécessaire
+- Route Handlers ponctuels si necessaire
 
 ### Data
 - Supabase Postgres
-- migrations SQL versionnées
+- migrations SQL versionnees
 - RLS simple
 
 ### Auth
@@ -45,13 +45,13 @@ Pour un projet Codex-friendly, il faut une architecture:
 
 ## Pourquoi cette stack est optimale pour vibe coding
 
-1. **Une seule codebase**
-2. **Peu de plomberie backend**
-3. **SQL explicite** pour garder la maîtrise du modèle
-4. **Auth/Storage/DB** déjà intégrés
-5. **Codex comprend bien ce type de stack**
+1. Une seule codebase
+2. Peu de plomberie backend
+3. SQL explicite pour garder la maitrise du modele
+4. Auth/Storage/DB deja integres
+5. Codex comprend bien ce type de stack
 
-## Structure dossier recommandée
+## Structure dossier recommandee
 
 ```text
 app/
@@ -83,31 +83,31 @@ tests/
   e2e/
 ```
 
-## Modèle de permissions simple
+## Modele de permissions simple
 
-Rôles:
+Roles:
 
 - `admin`
 - `manager`
 - `contributor`
 - `viewer`
 
-Règles MVP:
+Regles de base:
 
 - `viewer` lit seulement
-- `contributor` crée/édite certaines entités
-- `manager` gère risques/contrôles/actions
-- `admin` gère tout, y compris référentiels et utilisateurs
+- `contributor` cree/edite certaines entites
+- `manager` gere risques/controles/actions
+- `admin` gere tout, y compris referentiels et utilisateurs
 
-## Convention données
+## Convention donnees
 
 - UUID partout
 - `created_at`, `updated_at` partout
-- `created_by`, `updated_by` sur entités critiques
+- `created_by`, `updated_by` sur entites critiques
 - `deleted_at` pour soft delete lorsque pertinent
 - enums SQL pour statuts stables
 
-## Modules de données clés
+## Modules de donnees cles
 
 - organizations
 - profiles
@@ -121,9 +121,9 @@ Règles MVP:
 - control_framework_mappings
 - audit_log
 
-## Scoring MVP
+## Scoring de base
 
-Entrées:
+Entrees:
 - impact: 1..5
 - likelihood: 1..5
 
@@ -137,43 +137,44 @@ Suggestion:
 - 10-16: high
 - 17-25: critical
 
-## Dashboard MVP
+## Dashboard de base
 
 Widgets:
 - risques par statut
 - risques par niveau
 - heatmap impact x likelihood
 - actions en retard
-- contrôles à revoir dans 30 jours
+- controles a revoir dans 30 jours
 
-## Déploiement
+## Deploiement
 
 ### Option la plus simple
 - Vercel pour l'app
-- Supabase hébergé
+- Supabase heberge
 
-### Option plus contrôlée
+### Option plus controlee
 - Docker + VPS
-- Supabase managé ou Postgres séparé
+- Supabase manage ou Postgres separe
 
 ## Garde-fous architecture
 
-Ne pas ajouter au MVP:
+Ne pas ajouter dans la phase courante:
 
 - queue system complexe
 - event bus
 - microservices
-- websocket temps réel non essentiel
+- websocket temps reel non essentiel
 - moteur de workflow configurable
 - recherche vectorielle
+- multi-tenant SaaS complexe
 
 ## Extension future possible
 
-Après MVP:
+Ensuite:
 - notifications email
 - commentaires
 - exports PDF / Excel
 - questionnaires tiers
 - registre incidents
-- revue périodique de contrôles
-- assistant IA pour rédaction
+- revue periodique de controles
+- assistant IA pour redaction

@@ -1,75 +1,84 @@
-# Definition of Done
+﻿# Definition of Done
 
-## Done global d'un module
+## Done global d'un lot
 
-Un module est considéré terminé seulement si:
+Un lot est considere termine seulement si:
 
 - le code compile
 - le lint passe
-- la migration est présente
-- le seed est présent ou mis à jour
+- la migration est presente si necessaire
+- le seed est present ou mis a jour si necessaire
 - la feature est visible dans l'UI
-- la sécurité minimale est en place
+- la securite minimale est en place
 - les validations client et serveur existent
 - au moins un test utile existe
-- le README est mis à jour
-- un message de commit est proposé
+- le README est mis a jour
+- un message de commit est propose
 
 ## DoD par feature CRUD
 
 Pour chaque module CRUD:
 
 - page liste
-- page création
-- page édition ou modal d'édition
-- page détail
-- gestion état vide
+- page creation
+- page edition ou modal d'edition
+- page detail
+- gestion etat vide
 - gestion erreurs minimales
 - filtres de base
 - validation des champs
-- protection selon rôle
+- protection selon role
 
-## DoD sécurité minimale
+## DoD securite minimale
 
-- routes protégées
-- vérification du rôle côté serveur
-- inputs validés côté serveur
+- routes protegees
+- verification du role cote serveur
+- inputs valides cote serveur
 - pas de secrets en dur
-- fichiers uploadés avec règles minimales
+- fichiers uploades avec regles minimales
 
 ## DoD UX minimale
 
 - labels clairs
-- feedback de succès/erreur
-- navigation cohérente
+- feedback de succes/erreur
+- navigation coherente
 - tableaux lisibles
-- détails accessibles sans confusion
+- details accessibles sans confusion
 
-## DoD données
+## DoD donnees
 
-- types cohérents entre DB, validation et UI
+- types coherents entre DB, validation et UI
 - pas de champ orphelin sans usage
-- seeds réalistes pour démo
+- seeds realistes pour demo
 
 ## DoD dashboard
 
-- chaque widget s'appuie sur vraies données
-- aucun chiffre mocké en prod
-- états vides et erreurs gérés
+- chaque widget s'appuie sur vraies donnees
+- aucun chiffre mocke en prod
+- etats vides et erreurs geres
+
+## DoD expansion features
+
+Pour une feature d'extension, verifier en plus:
+
+- qu'elle s'appuie sur les roles et les entites existantes
+- qu'elle ne contourne pas RLS ou les validations serveur
+- qu'elle ne force pas un redesign global inutile
+- qu'elle ajoute une valeur metier concrete
 
 ## DoD refactor
 
 Un refactor n'est acceptable que s'il:
 
 - simplifie vraiment le code
-- ne casse pas le périmètre fonctionnel
-- ne réécrit pas tout inutilement
-- améliore la lisibilité
+- ne casse pas le perimetre fonctionnel
+- ne reecrit pas tout inutilement
+- ameliore la lisibilite
 
-## Ce qu'il faut systématiquement refuser au MVP
+## Ce qu'il faut systematiquement refuser dans la phase courante
 
-- moteur de workflow générique
+- moteur de workflow generique
 - permissions ultra-granulaires
-- architecture distribuée
+- architecture distribuee
 - abstraction repository/service inutile partout
-- IA sans valeur immédiate
+- IA sans valeur immediate

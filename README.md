@@ -1,6 +1,10 @@
-# Open GRC Platform
+﻿# Open GRC Platform
 
-Internal GRC MVP scaffold based on Next.js App Router, TypeScript, Tailwind, and Supabase.
+Internal GRC platform foundation based on Next.js App Router, TypeScript, Tailwind, and Supabase.
+
+## Product phase
+
+Phase 1 foundation is implemented. This repository is no longer managed as a greenfield initial build. The current objective is to extend the existing platform with higher-value operational, administrative, and collaboration features while keeping the architecture simple.
 
 ## Current implementation status
 
@@ -56,6 +60,23 @@ Internal GRC MVP scaffold based on Next.js App Router, TypeScript, Tailwind, and
   - audit history displayed on risk/control/action detail pages
 - SQL migrations and seed data
 - Playwright E2E smoke test + optional risk/control/action/evidence/framework tests
+
+## Current direction
+
+The next development phase focuses on expanding product depth rather than rebuilding the foundation.
+
+Priority areas:
+- admin settings and user lifecycle management
+- reusable risk/control starter libraries and bulk import flows
+- exports and reporting for management and audit use
+- collaboration features such as comments and notifications
+- selective new modules that fit the current architecture, such as incidents or recurring control reviews
+
+Guardrails:
+- keep a monolithic Next.js + Supabase architecture
+- avoid complex multi-tenant SaaS concerns unless there is a concrete need
+- prefer incremental vertical slices over large rewrites
+- preserve strict validation, RLS, and role-based access controls
 
 ## Project structure
 
@@ -204,8 +225,12 @@ The workflow runs:
 - `frameworks.mapping.spec.ts` requires admin credentials and at least one seeded control + framework requirement.
 - Framework mappings page is admin-only by design.
 
-## Post-MVP TODO
+## Next-phase roadmap
 
 - Add dedicated E2E coverage for audit log history entries.
 - Add optimistic UI feedback for form submissions (pending/success state).
 - Add an admin settings page for role reassignment and user lifecycle.
+- Add starter libraries and import flows for reusable risk and control bundles.
+- Add export/reporting flows for audit packs and management reporting.
+- Add lightweight collaboration features such as comments and reminders.
+- Evaluate selective new modules only after the above items are stable.

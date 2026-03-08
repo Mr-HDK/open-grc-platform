@@ -1,98 +1,93 @@
-# Mode opératoire avec Codex
+﻿# Mode operatoire avec Codex
 
 ## Objectif
 
-Faire produire beaucoup à Codex sans perdre le contrôle du code, du périmètre et de la qualité.
+Faire produire beaucoup a Codex sans perdre le controle du code, du perimetre et de la qualite.
 
-## Règle numéro 1
+## Regle numero 1
 
 Ne jamais demander:
 
-> "Construis-moi toute l'application"
+> "Reconstruis toute l'application"
 
 Toujours demander:
 
-> un lot fonctionnel limité, avec critères d'acceptation, fichiers attendus, migrations et tests.
+> un lot fonctionnel limite, avec criteres d'acceptation, fichiers attendus, migrations et tests.
 
-## Workflow recommandé
+## Workflow recommande
 
-### Étape 1 - Préparer le repo
+### Etape 1 - Partir de la base existante
 
-Créer un repo vide avec:
+Le repo contient deja:
 
-- ce dossier `docs/`
-- un README minimal
-- un `.env.example`
+- une base produit livree
+- les modules coeur du GRC interne
+- des migrations et un seed de demo
+- des tests E2E de base
 
-Dépose ensuite ce pack dans `docs/`.
+La bonne approche n'est plus d'initialiser le produit, mais de faire avancer des slices precises.
 
-### Étape 2 - Donner le prompt maître
+### Etape 2 - Donner le prompt maitre
 
-Commencer par `00_master_prompt_codex.md` puis demander à Codex de:
+Commencer par `00_master_prompt_codex.md` puis demander a Codex de:
 
 - lire les docs
-- proposer l'arborescence
-- initialiser le projet
-- installer les dépendances
-- configurer lint, format, scripts, Supabase local si utilisé
+- verifier le scope courant
+- choisir le lot le plus rentable
+- modifier seulement ce qui est utile
+- mettre a jour docs et README si le scope change
 
-### Étape 3 - Travailler par vertical slices
+### Etape 3 - Travailler par vertical slices
 
-Exemple de slices:
+Exemples de slices de phase courante:
 
-1. bootstrap + auth + layout
-2. risk register complet
-3. controls
-4. action plans
-5. evidence
-6. framework mapping
-7. dashboard
-8. audit log
+1. admin settings + user lifecycle
+2. control libraries + imports
+3. exports et reporting
+4. comments et notifications simples
+5. incidents ou periodic reviews
 
-Chaque slice doit être livrée avec:
+Chaque slice doit etre livree avec:
 
 - code
-- migration
-- seed
+- migration si necessaire
+- seed si necessaire
 - tests minimaux
-- README mis à jour
+- README mis a jour
 - message de commit
 
-### Étape 4 - Faire relire à Codex ce qu'il a produit
+### Etape 4 - Faire relire a Codex ce qu'il a produit
 
-Après chaque slice, relancer Codex avec:
+Apres chaque slice, relancer Codex avec:
 
 - revue du diff
 - simplification du code
-- détection dette technique
-- amélioration UX
+- detection dette technique
+- amelioration UX
 - corrections type safety
 
-### Étape 5 - Garder un rythme de commits court
+### Etape 5 - Garder un rythme de commits court
 
 Un commit par sous-module utile:
 
-- `feat(auth): add Supabase auth and protected layout`
-- `feat(risks): add risk register CRUD`
-- `feat(controls): add controls catalog and mappings`
+- `feat(settings): add admin user lifecycle tools`
+- `feat(libraries): add reusable control packs`
+- `feat(exports): add audit reporting flows`
 
-## Prompt type pour une tâche
+## Prompt type pour une tache
 
 ```text
 Lis d'abord docs/00_master_prompt_codex.md, docs/01_prd_mvp_grc.md et docs/02_architecture_technique.md.
 
-Implémente maintenant uniquement le module Risk Register.
+Implmente maintenant uniquement le module Admin Settings.
 
 Attendus:
-- table SQL risks avec migration
-- seed de données
-- pages liste + détail + création + édition
-- scoring impact x likelihood
-- filtres par statut, niveau, propriétaire
-- validation Zod
-- protection des pages selon rôles
-- tests E2E minimaux
-- README mis à jour
+- page settings admin
+- liste des utilisateurs/profils
+- changement de role
+- garde-fous serveur et RLS si necessaire
+- tests utiles
+- README mis a jour
 
 Contraintes:
 - reste simple
@@ -100,82 +95,66 @@ Contraintes:
 - composants lisibles
 - types stricts
 
-À la fin, donne:
-1. résumé
-2. fichiers modifiés
-3. commandes à lancer
+A la fin, donne:
+1. resume
+2. fichiers modifies
+3. commandes a lancer
 4. TODO restants
 5. message de commit
 ```
 
-## Ce qu'il faut demander systématiquement à Codex
+## Ce qu'il faut demander systematiquement a Codex
 
-À chaque lot, ajoute:
+A chaque lot, ajoute:
 
-- "n'ajoute rien hors périmètre"
-- "si une décision est ambiguë, choisis l'option la plus simple"
-- "ajoute migration et seed"
+- "n'ajoute rien hors perimetre"
+- "si une decision est ambigue, choisis l'option la plus simple"
+- "ajoute migration et seed si necessaire"
 - "ajoute au moins un test utile"
 - "propose un message de commit"
 
-## Ce qu'il faut éviter
+## Ce qu'il faut eviter
 
 - prompts trop larges
-- 15 objectifs dans le même message
-- refactor + nouvelle feature + redesign + perf en même temps
-- laisser Codex deviner le métier sans docs
+- 15 objectifs dans le meme message
+- refactor + nouvelle feature + redesign + perf en meme temps
+- laisser Codex deviner le metier sans docs
 
-## Boucle idéale
+## Boucle ideale
 
 1. demander une slice
-2. exécuter localement
+2. executer localement
 3. corriger erreurs
-4. demander revue/refactor ciblé
+4. demander revue/refactor cible
 5. commit
-6. passer à la slice suivante
+6. passer a la slice suivante
 
-## Quand utiliser Codex local vs cloud
-
-D'après la documentation OpenAI, Codex peut être utilisé dans le terminal, l'IDE, l'app Codex ou délégué dans le cloud selon le client utilisé. Pour démarrer ce projet, le plus simple est le **CLI ou l'IDE** pour itérer vite sur un repo local, puis le cloud pour tâches plus longues ou parallèles. Codex navigue le dépôt, modifie les fichiers et peut exécuter des commandes/tests à partir d'un prompt ou d'une spec. citeturn0search1turn0search3turn0search7
-
-## Ordre pratique réel
+## Ordre pratique reel
 
 ### Session 1
-- bootstrap repo
-- auth
-- layout
-- design tokens simples
+- admin settings
+- user lifecycle
 
 ### Session 2
-- risk register CRUD
-- scoring
-- filtres
+- libraries / bundles
+- import simple
 
 ### Session 3
-- controls
-- relation risk-controls
+- exports / reporting
 
 ### Session 4
-- action plans
-- overdue views
+- comments / reminders
 
 ### Session 5
-- evidence upload
+- incident register ou periodic reviews
 
-### Session 6
-- framework mappings
+## Checklist operateur
 
-### Session 7
-- dashboard
-- polish
+Avant d'envoyer un prompt a Codex:
 
-## Checklist opérateur
-
-Avant d'envoyer un prompt à Codex:
-
-- ai-je limité le périmètre ?
-- ai-je défini les livrables ?
-- ai-je demandé migration + seed + tests ?
+- ai-je limite le perimetre ?
+- ai-je defini les livrables ?
+- ai-je demande migration + seed + tests si necessaire ?
 - ai-je dit explicitement ce qu'il ne faut pas faire ?
 
 Si oui, le prompt est probablement assez bon.
