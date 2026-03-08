@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 
 import { recordAuditEvent } from "@/lib/audit/log";
 import { requireSessionProfile } from "@/lib/auth/profile";
+import { toUserErrorMessage } from "@/lib/forms/error-message";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import {
   buildControlMutation,
@@ -12,8 +13,8 @@ import {
   riskLinkIdsSchema,
 } from "@/lib/validators/control";
 
-function encodeMessage(message: string) {
-  return encodeURIComponent(message);
+function encodeMessage(message: string | null | undefined, fallback = "Request could not be completed.") {
+  return encodeURIComponent(toUserErrorMessage(message, fallback));
 }
 
 function parseControlPayload(formData: FormData) {
@@ -60,6 +61,43 @@ async function replaceRiskLinks(controlId: string, riskIds: string[]) {
   return insertError ? insertError.message : null;
 }
 
+type IdRow = {
+  id: string;
+};
+
+async function validateOwnerProfile(ownerProfileId: string | null) {
+  if (!ownerProfileId) {
+    return null;
+  }
+
+  const supabase = await createSupabaseServerClient();
+  const { data } = await supabase
+    .from("profiles")
+    .select("id")
+    .eq("id", ownerProfileId)
+    .maybeSingle<IdRow>();
+
+  return data ? null : "Selected owner does not exist.";
+}
+
+async function validateActiveRisks(riskIds: string[]) {
+  if (riskIds.length === 0) {
+    return null;
+  }
+
+  const supabase = await createSupabaseServerClient();
+  const { data } = await supabase
+    .from("risks")
+    .select("id")
+    .in("id", riskIds)
+    .is("deleted_at", null)
+    .returns<IdRow[]>();
+
+  return (data ?? []).length === riskIds.length
+    ? null
+    : "One or more linked risks no longer exist or are archived.";
+}
+
 export async function createControlAction(formData: FormData) {
   const profile = await requireSessionProfile("contributor");
 
@@ -68,14 +106,26 @@ export async function createControlAction(formData: FormData) {
 
   if (!parsed.success) {
     redirect(
-      `/dashboard/controls/new?error=${encodeMessage(parsed.error.issues[0]?.message ?? "Invalid control payload")}`,
+      `/dashboard/controls/new?error=${encodeMessage(parsed.error.issues[0]?.message, "Submitted control fields are invalid.")}`,
     );
   }
 
   if (!riskLinks.success) {
     redirect(
-      `/dashboard/controls/new?error=${encodeMessage(riskLinks.error.issues[0]?.message ?? "Invalid risk links")}`,
+      `/dashboard/controls/new?error=${encodeMessage(riskLinks.error.issues[0]?.message, "Linked risk values are invalid.")}`,
     );
+  }
+
+  const ownerError = await validateOwnerProfile(parsed.data.ownerProfileId);
+
+  if (ownerError) {
+    redirect(`/dashboard/controls/new?error=${encodeMessage(ownerError)}`);
+  }
+
+  const riskError = await validateActiveRisks(riskLinks.data);
+
+  if (riskError) {
+    redirect(`/dashboard/controls/new?error=${encodeMessage(riskError)}`);
   }
 
   const supabase = await createSupabaseServerClient();
@@ -92,7 +142,7 @@ export async function createControlAction(formData: FormData) {
 
   if (error || !data) {
     redirect(
-      `/dashboard/controls/new?error=${encodeMessage(error?.message ?? "Could not create control")}`,
+      `/dashboard/controls/new?error=${encodeMessage(error?.message, "Could not create control.")}`,
     );
   }
 
@@ -132,14 +182,26 @@ export async function updateControlAction(formData: FormData) {
 
   if (!parsed.success) {
     redirect(
-      `/dashboard/controls/${controlIdResult.data}/edit?error=${encodeMessage(parsed.error.issues[0]?.message ?? "Invalid control payload")}`,
+      `/dashboard/controls/${controlIdResult.data}/edit?error=${encodeMessage(parsed.error.issues[0]?.message, "Submitted control fields are invalid.")}`,
     );
   }
 
   if (!riskLinks.success) {
     redirect(
-      `/dashboard/controls/${controlIdResult.data}/edit?error=${encodeMessage(riskLinks.error.issues[0]?.message ?? "Invalid risk links")}`,
+      `/dashboard/controls/${controlIdResult.data}/edit?error=${encodeMessage(riskLinks.error.issues[0]?.message, "Linked risk values are invalid.")}`,
     );
+  }
+
+  const ownerError = await validateOwnerProfile(parsed.data.ownerProfileId);
+
+  if (ownerError) {
+    redirect(`/dashboard/controls/${controlIdResult.data}/edit?error=${encodeMessage(ownerError)}`);
+  }
+
+  const riskError = await validateActiveRisks(riskLinks.data);
+
+  if (riskError) {
+    redirect(`/dashboard/controls/${controlIdResult.data}/edit?error=${encodeMessage(riskError)}`);
   }
 
   const mutation = buildControlMutation(parsed.data, profile.id);

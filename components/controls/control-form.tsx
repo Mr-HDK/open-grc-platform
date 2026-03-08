@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { buttonVariants } from "@/components/ui/button";
+import { FeedbackAlert } from "@/components/ui/feedback-alert";
 import { Input } from "@/components/ui/input";
 import {
   controlEffectivenessOptions,
@@ -58,16 +59,16 @@ export function ControlForm({
   const selectedRiskIds = new Set(defaults?.selectedRiskIds ?? []);
 
   return (
-    <form action={action} className="space-y-6 rounded-xl border bg-card p-6 shadow-sm">
+    <form
+      action={action}
+      aria-describedby={error ? "control-form-error" : undefined}
+      className="space-y-6 rounded-xl border bg-card p-6 shadow-sm"
+    >
       {defaults?.controlId ? (
         <input type="hidden" name="controlId" value={defaults.controlId} />
       ) : null}
 
-      {error ? (
-        <p className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
-          {error}
-        </p>
-      ) : null}
+      {error ? <FeedbackAlert id="control-form-error" message={error} /> : null}
 
       <div className="grid gap-5 md:grid-cols-2">
         <div className="space-y-2">

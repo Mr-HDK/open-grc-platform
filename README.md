@@ -136,6 +136,13 @@ Role seed mapping by email:
 
 Create those users in Supabase Auth first, then run seed.
 
+Suggested migration/seed workflow:
+
+1. Open Supabase SQL Editor.
+2. Execute each migration file in order.
+3. Execute `supabase/seed/seed.sql`.
+4. Validate that demo users in `profiles` received expected roles.
+
 ## Run locally
 
 ```bash
@@ -144,6 +151,15 @@ npm run dev
 ```
 
 Open `http://localhost:3000`.
+
+## Installation checklist
+
+1. Install dependencies with `npm install`.
+2. Configure `.env.local` with Supabase keys.
+3. Apply SQL migrations and seed.
+4. Create test users in Supabase Auth.
+5. Start local server with `npm run dev`.
+6. Login with a seeded account and verify access by role.
 
 ## Quality commands
 
@@ -154,8 +170,29 @@ npm run format:check
 npm run test:e2e
 ```
 
+## Operations notes
+
+- Critical permissions:
+  - `viewer`: read-only access to dashboard modules
+  - `contributor`: can create and edit records
+  - `manager`: can archive records
+  - `admin`: can manage framework mappings
+- Server-side validation now enforces:
+  - strict UUID/date format checks on linked fields
+  - linked-record existence checks before write operations
+  - normalized user-facing error messages for common database errors
+- Audit log events are best-effort and do not block core create/update/archive operations.
+
 ## Notes
 
 - `tests/e2e/risks.create.spec.ts`, `tests/e2e/controls.create.spec.ts`, `tests/e2e/actions.create.spec.ts`, `tests/e2e/evidence.create.spec.ts`, and `tests/e2e/frameworks.mapping.spec.ts` skip automatically if required credentials are not set.
 - `frameworks.mapping.spec.ts` requires admin credentials and at least one seeded control + framework requirement.
 - Framework mappings page is admin-only by design.
+
+## Post-MVP TODO
+
+- Add dedicated E2E coverage for audit log history entries.
+- Add organization scoping (`organization_id`) in policies and queries.
+- Add download/view links for evidence files with signed URL expiration controls.
+- Add optimistic UI feedback for form submissions (pending/success state).
+- Add an admin settings page for role reassignment and user lifecycle.

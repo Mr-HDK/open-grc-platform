@@ -14,7 +14,6 @@ const baseNavLinks = [
   { href: "/dashboard/controls", label: "Controls" },
   { href: "/dashboard/actions", label: "Actions" },
   { href: "/dashboard/evidence", label: "Evidence" },
-  { href: "/dashboard/frameworks", label: "Frameworks" },
 ];
 
 const roleBadgeClass: Record<Role, string> = {
@@ -25,10 +24,12 @@ const roleBadgeClass: Record<Role, string> = {
 };
 
 export function AppShell({ userEmail, userRole, children }: AppShellProps) {
-  const navLinks =
-    userRole === "admin"
-      ? [...baseNavLinks, { href: "/dashboard/settings", label: "Settings" }]
-      : baseNavLinks;
+  const navLinks = [...baseNavLinks];
+
+  if (userRole === "admin") {
+    navLinks.push({ href: "/dashboard/frameworks", label: "Frameworks" });
+    navLinks.push({ href: "/dashboard/settings", label: "Settings" });
+  }
 
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,_rgba(15,23,42,0.04),_transparent_45%)]">
@@ -44,7 +45,7 @@ export function AppShell({ userEmail, userRole, children }: AppShellProps) {
             {userRole}
           </p>
 
-          <nav className="mt-8 space-y-2">
+          <nav aria-label="Primary navigation" className="mt-8 space-y-2">
             {navLinks.map((link) => (
               <Link
                 key={link.href}

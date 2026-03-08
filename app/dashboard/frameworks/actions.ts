@@ -3,15 +3,20 @@
 import { redirect } from "next/navigation";
 
 import { requireSessionProfile } from "@/lib/auth/profile";
+import { toUserErrorMessage } from "@/lib/forms/error-message";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import {
   frameworkControlIdSchema,
   frameworkRequirementIdsSchema,
 } from "@/lib/validators/framework-mapping";
 
-function encodeMessage(message: string) {
-  return encodeURIComponent(message);
+function encodeMessage(message: string | null | undefined, fallback = "Request could not be completed.") {
+  return encodeURIComponent(toUserErrorMessage(message, fallback));
 }
+
+type IdRow = {
+  id: string;
+};
 
 export async function saveFrameworkMappingsAction(formData: FormData) {
   await requireSessionProfile("admin");
@@ -33,6 +38,31 @@ export async function saveFrameworkMappingsAction(formData: FormData) {
   }
 
   const supabase = await createSupabaseServerClient();
+
+  const { data: control } = await supabase
+    .from("controls")
+    .select("id")
+    .eq("id", controlIdResult.data)
+    .is("deleted_at", null)
+    .maybeSingle<IdRow>();
+
+  if (!control) {
+    redirect(`/dashboard/frameworks?error=${encodeMessage("Selected control does not exist or is archived.")}`);
+  }
+
+  if (requirementIdsResult.data.length > 0) {
+    const { data: requirements } = await supabase
+      .from("framework_requirements")
+      .select("id")
+      .in("id", requirementIdsResult.data)
+      .returns<IdRow[]>();
+
+    if ((requirements ?? []).length !== requirementIdsResult.data.length) {
+      redirect(
+        `/dashboard/frameworks?controlId=${controlIdResult.data}&error=${encodeMessage("One or more framework requirements are invalid.")}`,
+      );
+    }
+  }
 
   const { error: deleteError } = await supabase
     .from("control_framework_mappings")

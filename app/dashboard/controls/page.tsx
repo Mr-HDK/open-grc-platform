@@ -1,8 +1,10 @@
 import Link from "next/link";
 
 import { buttonVariants } from "@/components/ui/button";
+import { FeedbackAlert } from "@/components/ui/feedback-alert";
 import { Input } from "@/components/ui/input";
 import { requireSessionProfile } from "@/lib/auth/profile";
+import { hasRole } from "@/lib/permissions/roles";
 import { cn } from "@/lib/utils/cn";
 import {
   controlEffectivenessOptions,
@@ -33,7 +35,8 @@ export default async function ControlsPage({
     error?: string;
   }>;
 }) {
-  await requireSessionProfile("viewer");
+  const profile = await requireSessionProfile("viewer");
+  const canEdit = hasRole("contributor", profile.role);
 
   const params = await searchParams;
   const q = params.q?.trim() ?? "";
@@ -74,22 +77,21 @@ export default async function ControlsPage({
             Maintain control effectiveness and map controls to risks.
           </p>
         </div>
-        <Link href="/dashboard/controls/new" className={buttonVariants()}>
-          New control
-        </Link>
+        {canEdit ? (
+          <Link href="/dashboard/controls/new" className={buttonVariants()}>
+            New control
+          </Link>
+        ) : null}
       </div>
 
-      {params.error ? (
-        <p className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
-          {decodeURIComponent(params.error)}
-        </p>
-      ) : null}
+      {params.error ? <FeedbackAlert message={decodeURIComponent(params.error)} /> : null}
 
       <form className="grid gap-3 rounded-lg border bg-card p-4 md:grid-cols-4">
         <Input name="q" placeholder="Search by title or code" defaultValue={q} />
 
         <select
           name="effectiveness"
+          aria-label="Filter by effectiveness"
           defaultValue={effectiveness}
           className="h-10 rounded-md border border-slate-200 bg-white px-3 text-sm"
         >
@@ -103,6 +105,7 @@ export default async function ControlsPage({
 
         <select
           name="frequency"
+          aria-label="Filter by review frequency"
           defaultValue={frequency}
           className="h-10 rounded-md border border-slate-200 bg-white px-3 text-sm"
         >
@@ -119,22 +122,31 @@ export default async function ControlsPage({
         </button>
       </form>
 
-      {error ? (
-        <p className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
-          {error.message}
-        </p>
-      ) : null}
+      {error ? <FeedbackAlert message={error.message} /> : null}
 
       <div className="overflow-x-auto rounded-lg border bg-card">
         <table className="w-full min-w-[820px] text-left text-sm">
+          <caption className="sr-only">Controls catalog results</caption>
           <thead className="border-b bg-muted/30 text-xs uppercase tracking-wide text-muted-foreground">
             <tr>
-              <th className="px-4 py-3">Code</th>
-              <th className="px-4 py-3">Title</th>
-              <th className="px-4 py-3">Type</th>
-              <th className="px-4 py-3">Effectiveness</th>
-              <th className="px-4 py-3">Frequency</th>
-              <th className="px-4 py-3">Next review</th>
+              <th scope="col" className="px-4 py-3">
+                Code
+              </th>
+              <th scope="col" className="px-4 py-3">
+                Title
+              </th>
+              <th scope="col" className="px-4 py-3">
+                Type
+              </th>
+              <th scope="col" className="px-4 py-3">
+                Effectiveness
+              </th>
+              <th scope="col" className="px-4 py-3">
+                Frequency
+              </th>
+              <th scope="col" className="px-4 py-3">
+                Next review
+              </th>
             </tr>
           </thead>
           <tbody>

@@ -4,11 +4,12 @@ import { redirect } from "next/navigation";
 
 import { recordAuditEvent } from "@/lib/audit/log";
 import { requireSessionProfile } from "@/lib/auth/profile";
+import { toUserErrorMessage } from "@/lib/forms/error-message";
 import { buildRiskMutation, riskFormSchema, riskIdSchema } from "@/lib/validators/risk";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
-function encodeMessage(message: string) {
-  return encodeURIComponent(message);
+function encodeMessage(message: string | null | undefined, fallback = "Request could not be completed.") {
+  return encodeURIComponent(toUserErrorMessage(message, fallback));
 }
 
 function parseRiskPayload(formData: FormData) {
@@ -28,7 +29,9 @@ export async function createRiskAction(formData: FormData) {
   const parsed = parseRiskPayload(formData);
 
   if (!parsed.success) {
-    redirect(`/dashboard/risks/new?error=${encodeMessage(parsed.error.issues[0]?.message ?? "Invalid risk payload")}`);
+    redirect(
+      `/dashboard/risks/new?error=${encodeMessage(parsed.error.issues[0]?.message, "Submitted risk fields are invalid.")}`,
+    );
   }
 
   const supabase = await createSupabaseServerClient();
@@ -40,7 +43,7 @@ export async function createRiskAction(formData: FormData) {
   const { data, error } = await supabase.from("risks").insert(mutation).select("id").single<{ id: string }>();
 
   if (error || !data) {
-    redirect(`/dashboard/risks/new?error=${encodeMessage(error?.message ?? "Could not create risk")}`);
+    redirect(`/dashboard/risks/new?error=${encodeMessage(error?.message, "Could not create risk.")}`);
   }
 
   await recordAuditEvent({
@@ -70,7 +73,9 @@ export async function updateRiskAction(formData: FormData) {
   const parsed = parseRiskPayload(formData);
 
   if (!parsed.success) {
-    redirect(`/dashboard/risks/${riskIdResult.data}/edit?error=${encodeMessage(parsed.error.issues[0]?.message ?? "Invalid risk payload")}`);
+    redirect(
+      `/dashboard/risks/${riskIdResult.data}/edit?error=${encodeMessage(parsed.error.issues[0]?.message, "Submitted risk fields are invalid.")}`,
+    );
   }
 
   const mutation = buildRiskMutation(parsed.data, profile.id);

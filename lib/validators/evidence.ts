@@ -2,6 +2,15 @@ import { z } from "zod";
 
 export const MAX_EVIDENCE_FILE_SIZE_BYTES = 25 * 1024 * 1024;
 
+const optionalUuidField = z
+  .string()
+  .trim()
+  .optional()
+  .transform((value) => (value ? value : null))
+  .refine((value) => value === null || z.string().uuid().safeParse(value).success, {
+    message: "Linked record identifier must be a valid UUID.",
+  });
+
 export const evidenceFormSchema = z
   .object({
     title: z.string().trim().min(3).max(180),
@@ -11,21 +20,9 @@ export const evidenceFormSchema = z
       .max(5000)
       .optional()
       .transform((value) => (value ? value : null)),
-    riskId: z
-      .string()
-      .trim()
-      .optional()
-      .transform((value) => (value ? value : null)),
-    controlId: z
-      .string()
-      .trim()
-      .optional()
-      .transform((value) => (value ? value : null)),
-    actionPlanId: z
-      .string()
-      .trim()
-      .optional()
-      .transform((value) => (value ? value : null)),
+    riskId: optionalUuidField,
+    controlId: optionalUuidField,
+    actionPlanId: optionalUuidField,
   })
   .refine((payload) => Boolean(payload.riskId || payload.controlId || payload.actionPlanId), {
     path: ["riskId"],

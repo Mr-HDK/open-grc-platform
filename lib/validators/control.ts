@@ -19,6 +19,24 @@ export const controlReviewFrequencyOptions = [
 export type ControlEffectivenessStatus = (typeof controlEffectivenessOptions)[number];
 export type ControlReviewFrequency = (typeof controlReviewFrequencyOptions)[number];
 
+const optionalUuidField = z
+  .string()
+  .trim()
+  .optional()
+  .transform((value) => (value ? value : null))
+  .refine((value) => value === null || z.string().uuid().safeParse(value).success, {
+    message: "Owner must be a valid profile identifier.",
+  });
+
+const optionalDateField = z
+  .string()
+  .trim()
+  .optional()
+  .transform((value) => (value ? value : null))
+  .refine((value) => value === null || /^\d{4}-\d{2}-\d{2}$/.test(value), {
+    message: "Next review date must use YYYY-MM-DD format.",
+  });
+
 export const controlFormSchema = z.object({
   code: z.string().trim().min(2).max(40).regex(/^[A-Za-z0-9_-]+$/),
   title: z.string().trim().min(3).max(180),
@@ -26,16 +44,8 @@ export const controlFormSchema = z.object({
   controlType: z.string().trim().min(2).max(50),
   reviewFrequency: z.enum(controlReviewFrequencyOptions),
   effectivenessStatus: z.enum(controlEffectivenessOptions),
-  ownerProfileId: z
-    .string()
-    .trim()
-    .optional()
-    .transform((value) => (value ? value : null)),
-  nextReviewDate: z
-    .string()
-    .trim()
-    .optional()
-    .transform((value) => (value ? value : null)),
+  ownerProfileId: optionalUuidField,
+  nextReviewDate: optionalDateField,
 });
 
 export const controlIdSchema = z.string().uuid();

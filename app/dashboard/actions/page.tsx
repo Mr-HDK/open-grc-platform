@@ -1,8 +1,10 @@
 import Link from "next/link";
 
 import { buttonVariants } from "@/components/ui/button";
+import { FeedbackAlert } from "@/components/ui/feedback-alert";
 import { Input } from "@/components/ui/input";
 import { requireSessionProfile } from "@/lib/auth/profile";
+import { hasRole } from "@/lib/permissions/roles";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { cn } from "@/lib/utils/cn";
 import {
@@ -47,7 +49,8 @@ export default async function ActionPlansPage({
     error?: string;
   }>;
 }) {
-  await requireSessionProfile("viewer");
+  const profile = await requireSessionProfile("viewer");
+  const canEdit = hasRole("contributor", profile.role);
 
   const params = await searchParams;
   const q = params.q?.trim() ?? "";
@@ -116,22 +119,21 @@ export default async function ActionPlansPage({
             Track remediation work linked to risks and controls.
           </p>
         </div>
-        <Link href="/dashboard/actions/new" className={buttonVariants()}>
-          New action plan
-        </Link>
+        {canEdit ? (
+          <Link href="/dashboard/actions/new" className={buttonVariants()}>
+            New action plan
+          </Link>
+        ) : null}
       </div>
 
-      {params.error ? (
-        <p className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
-          {decodeURIComponent(params.error)}
-        </p>
-      ) : null}
+      {params.error ? <FeedbackAlert message={decodeURIComponent(params.error)} /> : null}
 
       <form className="grid gap-3 rounded-lg border bg-card p-4 md:grid-cols-5">
         <Input name="q" placeholder="Search by title" defaultValue={q} />
 
         <select
           name="status"
+          aria-label="Filter by status"
           defaultValue={status}
           className="h-10 rounded-md border border-slate-200 bg-white px-3 text-sm"
         >
@@ -145,6 +147,7 @@ export default async function ActionPlansPage({
 
         <select
           name="priority"
+          aria-label="Filter by priority"
           defaultValue={priority}
           className="h-10 rounded-md border border-slate-200 bg-white px-3 text-sm"
         >
@@ -158,6 +161,7 @@ export default async function ActionPlansPage({
 
         <select
           name="overdue"
+          aria-label="Filter by overdue state"
           defaultValue={overdueFilter}
           className="h-10 rounded-md border border-slate-200 bg-white px-3 text-sm"
         >
@@ -171,22 +175,31 @@ export default async function ActionPlansPage({
         </button>
       </form>
 
-      {error ? (
-        <p className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
-          {error.message}
-        </p>
-      ) : null}
+      {error ? <FeedbackAlert message={error.message} /> : null}
 
       <div className="overflow-x-auto rounded-lg border bg-card">
         <table className="w-full min-w-[920px] text-left text-sm">
+          <caption className="sr-only">Action plan results</caption>
           <thead className="border-b bg-muted/30 text-xs uppercase tracking-wide text-muted-foreground">
             <tr>
-              <th className="px-4 py-3">Title</th>
-              <th className="px-4 py-3">Status</th>
-              <th className="px-4 py-3">Priority</th>
-              <th className="px-4 py-3">Target</th>
-              <th className="px-4 py-3">Overdue</th>
-              <th className="px-4 py-3">Links</th>
+              <th scope="col" className="px-4 py-3">
+                Title
+              </th>
+              <th scope="col" className="px-4 py-3">
+                Status
+              </th>
+              <th scope="col" className="px-4 py-3">
+                Priority
+              </th>
+              <th scope="col" className="px-4 py-3">
+                Target
+              </th>
+              <th scope="col" className="px-4 py-3">
+                Overdue
+              </th>
+              <th scope="col" className="px-4 py-3">
+                Links
+              </th>
             </tr>
           </thead>
           <tbody>

@@ -2,8 +2,10 @@ import Link from "next/link";
 
 import { archiveEvidenceAction } from "@/app/dashboard/evidence/actions";
 import { buttonVariants } from "@/components/ui/button";
+import { FeedbackAlert } from "@/components/ui/feedback-alert";
 import { Input } from "@/components/ui/input";
 import { requireSessionProfile } from "@/lib/auth/profile";
+import { hasRole } from "@/lib/permissions/roles";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 type EvidenceListItem = {
@@ -35,7 +37,9 @@ export default async function EvidencePage({
 }: {
   searchParams: Promise<{ q?: string; target?: string; error?: string }>;
 }) {
-  await requireSessionProfile("viewer");
+  const profile = await requireSessionProfile("viewer");
+  const canUpload = hasRole("contributor", profile.role);
+  const canArchive = hasRole("manager", profile.role);
 
   const params = await searchParams;
   const q = params.q?.trim() ?? "";
@@ -78,22 +82,21 @@ export default async function EvidencePage({
             Upload and track file-based proof linked to risks, controls, and actions.
           </p>
         </div>
-        <Link href="/dashboard/evidence/new" className={buttonVariants()}>
-          Upload evidence
-        </Link>
+        {canUpload ? (
+          <Link href="/dashboard/evidence/new" className={buttonVariants()}>
+            Upload evidence
+          </Link>
+        ) : null}
       </div>
 
-      {params.error ? (
-        <p className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
-          {decodeURIComponent(params.error)}
-        </p>
-      ) : null}
+      {params.error ? <FeedbackAlert message={decodeURIComponent(params.error)} /> : null}
 
       <form className="grid gap-3 rounded-lg border bg-card p-4 md:grid-cols-3">
         <Input name="q" placeholder="Search by title or filename" defaultValue={q} />
 
         <select
           name="target"
+          aria-label="Filter by linked target"
           defaultValue={target}
           className="h-10 rounded-md border border-slate-200 bg-white px-3 text-sm"
         >
@@ -108,22 +111,31 @@ export default async function EvidencePage({
         </button>
       </form>
 
-      {error ? (
-        <p className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
-          {error.message}
-        </p>
-      ) : null}
+      {error ? <FeedbackAlert message={error.message} /> : null}
 
       <div className="overflow-x-auto rounded-lg border bg-card">
         <table className="w-full min-w-[880px] text-left text-sm">
+          <caption className="sr-only">Evidence registry results</caption>
           <thead className="border-b bg-muted/30 text-xs uppercase tracking-wide text-muted-foreground">
             <tr>
-              <th className="px-4 py-3">Title</th>
-              <th className="px-4 py-3">File</th>
-              <th className="px-4 py-3">Size</th>
-              <th className="px-4 py-3">Targets</th>
-              <th className="px-4 py-3">Created</th>
-              <th className="px-4 py-3">Actions</th>
+              <th scope="col" className="px-4 py-3">
+                Title
+              </th>
+              <th scope="col" className="px-4 py-3">
+                File
+              </th>
+              <th scope="col" className="px-4 py-3">
+                Size
+              </th>
+              <th scope="col" className="px-4 py-3">
+                Targets
+              </th>
+              <th scope="col" className="px-4 py-3">
+                Created
+              </th>
+              <th scope="col" className="px-4 py-3">
+                Actions
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -141,12 +153,16 @@ export default async function EvidencePage({
                   {new Date(item.created_at).toLocaleString()}
                 </td>
                 <td className="px-4 py-3">
-                  <form action={archiveEvidenceAction}>
-                    <input type="hidden" name="evidenceId" value={item.id} />
-                    <button type="submit" className="text-xs font-medium text-muted-foreground underline">
-                      Archive
-                    </button>
-                  </form>
+                  {canArchive ? (
+                    <form action={archiveEvidenceAction}>
+                      <input type="hidden" name="evidenceId" value={item.id} />
+                      <button type="submit" className="text-xs font-medium text-muted-foreground underline">
+                        Archive
+                      </button>
+                    </form>
+                  ) : (
+                    <span className="text-xs text-muted-foreground">-</span>
+                  )}
                 </td>
               </tr>
             ))}

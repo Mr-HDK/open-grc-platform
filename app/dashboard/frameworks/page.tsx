@@ -1,4 +1,5 @@
 import { saveFrameworkMappingsAction } from "@/app/dashboard/frameworks/actions";
+import { FeedbackAlert } from "@/components/ui/feedback-alert";
 import { requireSessionProfile } from "@/lib/auth/profile";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
@@ -97,16 +98,10 @@ export default async function FrameworksPage({
         </p>
       </div>
 
-      {params.error ? (
-        <p className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
-          {decodeURIComponent(params.error)}
-        </p>
-      ) : null}
+      {params.error ? <FeedbackAlert message={decodeURIComponent(params.error)} /> : null}
 
       {params.success === "mappings_updated" ? (
-        <p className="rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
-          Mappings updated.
-        </p>
+        <FeedbackAlert variant="success" title="Mappings updated." message="Framework mappings were saved successfully." />
       ) : null}
 
       <form className="rounded-lg border bg-card p-4">

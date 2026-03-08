@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { buttonVariants } from "@/components/ui/button";
+import { FeedbackAlert } from "@/components/ui/feedback-alert";
 import { Input } from "@/components/ui/input";
 import {
   actionPriorityOptions,
@@ -50,16 +51,16 @@ export function ActionPlanForm({
   error,
 }: ActionPlanFormProps) {
   return (
-    <form action={action} className="space-y-6 rounded-xl border bg-card p-6 shadow-sm">
+    <form
+      action={action}
+      aria-describedby={error ? "action-form-error" : undefined}
+      className="space-y-6 rounded-xl border bg-card p-6 shadow-sm"
+    >
       {defaults?.actionPlanId ? (
         <input type="hidden" name="actionPlanId" value={defaults.actionPlanId} />
       ) : null}
 
-      {error ? (
-        <p className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
-          {error}
-        </p>
-      ) : null}
+      {error ? <FeedbackAlert id="action-form-error" message={error} /> : null}
 
       <div className="grid gap-5 md:grid-cols-2">
         <div className="space-y-2 md:col-span-2">

@@ -1,8 +1,10 @@
 import Link from "next/link";
 
 import { buttonVariants } from "@/components/ui/button";
+import { FeedbackAlert } from "@/components/ui/feedback-alert";
 import { Input } from "@/components/ui/input";
 import { requireSessionProfile } from "@/lib/auth/profile";
+import { hasRole } from "@/lib/permissions/roles";
 import { riskLevelOptions, riskStatusOptions } from "@/lib/scoring/risk";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { cn } from "@/lib/utils/cn";
@@ -26,7 +28,8 @@ export default async function RisksPage({
 }: {
   searchParams: Promise<{ q?: string; status?: string; level?: string; error?: string }>;
 }) {
-  await requireSessionProfile("viewer");
+  const profile = await requireSessionProfile("viewer");
+  const canEdit = hasRole("contributor", profile.role);
 
   const params = await searchParams;
   const q = params.q?.trim() ?? "";
@@ -63,22 +66,21 @@ export default async function RisksPage({
             Search, filter, and maintain the current risk inventory.
           </p>
         </div>
-        <Link href="/dashboard/risks/new" className={buttonVariants()}>
-          New risk
-        </Link>
+        {canEdit ? (
+          <Link href="/dashboard/risks/new" className={buttonVariants()}>
+            New risk
+          </Link>
+        ) : null}
       </div>
 
-      {params.error ? (
-        <p className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
-          {decodeURIComponent(params.error)}
-        </p>
-      ) : null}
+      {params.error ? <FeedbackAlert message={decodeURIComponent(params.error)} /> : null}
 
       <form className="grid gap-3 rounded-lg border bg-card p-4 md:grid-cols-4">
         <Input name="q" placeholder="Search by title" defaultValue={q} />
 
         <select
           name="status"
+          aria-label="Filter by status"
           defaultValue={status}
           className="h-10 rounded-md border border-slate-200 bg-white px-3 text-sm"
         >
@@ -92,6 +94,7 @@ export default async function RisksPage({
 
         <select
           name="level"
+          aria-label="Filter by level"
           defaultValue={level}
           className="h-10 rounded-md border border-slate-200 bg-white px-3 text-sm"
         >
@@ -108,22 +111,31 @@ export default async function RisksPage({
         </button>
       </form>
 
-      {error ? (
-        <p className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
-          {error.message}
-        </p>
-      ) : null}
+      {error ? <FeedbackAlert message={error.message} /> : null}
 
       <div className="overflow-x-auto rounded-lg border bg-card">
         <table className="w-full min-w-[780px] text-left text-sm">
+          <caption className="sr-only">Risk register results</caption>
           <thead className="border-b bg-muted/30 text-xs uppercase tracking-wide text-muted-foreground">
             <tr>
-              <th className="px-4 py-3">Title</th>
-              <th className="px-4 py-3">Category</th>
-              <th className="px-4 py-3">Status</th>
-              <th className="px-4 py-3">Score</th>
-              <th className="px-4 py-3">Level</th>
-              <th className="px-4 py-3">Due date</th>
+              <th scope="col" className="px-4 py-3">
+                Title
+              </th>
+              <th scope="col" className="px-4 py-3">
+                Category
+              </th>
+              <th scope="col" className="px-4 py-3">
+                Status
+              </th>
+              <th scope="col" className="px-4 py-3">
+                Score
+              </th>
+              <th scope="col" className="px-4 py-3">
+                Level
+              </th>
+              <th scope="col" className="px-4 py-3">
+                Due date
+              </th>
             </tr>
           </thead>
           <tbody>

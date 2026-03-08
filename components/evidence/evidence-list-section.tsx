@@ -13,6 +13,7 @@ type EvidenceListProps = {
   emptyMessage: string;
   items: EvidenceListItem[];
   createHref: string;
+  canCreate?: boolean;
 };
 
 function formatFileSize(size: number) {
@@ -27,14 +28,22 @@ function formatFileSize(size: number) {
   return `${(size / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-export function EvidenceListSection({ title, emptyMessage, items, createHref }: EvidenceListProps) {
+export function EvidenceListSection({
+  title,
+  emptyMessage,
+  items,
+  createHref,
+  canCreate = true,
+}: EvidenceListProps) {
   return (
     <section className="rounded-xl border bg-card p-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h2 className="text-lg font-semibold tracking-tight">{title}</h2>
-        <Link href={createHref} className="text-sm font-medium text-muted-foreground underline">
-          Add evidence
-        </Link>
+        {canCreate ? (
+          <Link href={createHref} className="text-sm font-medium text-muted-foreground underline">
+            Add evidence
+          </Link>
+        ) : null}
       </div>
 
       {items.length === 0 ? (

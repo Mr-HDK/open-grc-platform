@@ -13,28 +13,25 @@ export const actionPriorityOptions = ["low", "medium", "high", "critical"] as co
 export type ActionStatus = (typeof actionStatusOptions)[number];
 export type ActionPriority = (typeof actionPriorityOptions)[number];
 
+const optionalUuidField = z
+  .string()
+  .trim()
+  .optional()
+  .transform((value) => (value ? value : null))
+  .refine((value) => value === null || z.string().uuid().safeParse(value).success, {
+    message: "Linked record identifier must be a valid UUID.",
+  });
+
 export const actionPlanFormSchema = z
   .object({
     title: z.string().trim().min(3).max(180),
     description: z.string().trim().min(10).max(5000),
-    riskId: z
-      .string()
-      .trim()
-      .optional()
-      .transform((value) => (value ? value : null)),
-    controlId: z
-      .string()
-      .trim()
-      .optional()
-      .transform((value) => (value ? value : null)),
-    ownerProfileId: z
-      .string()
-      .trim()
-      .optional()
-      .transform((value) => (value ? value : null)),
+    riskId: optionalUuidField,
+    controlId: optionalUuidField,
+    ownerProfileId: optionalUuidField,
     status: z.enum(actionStatusOptions),
     priority: z.enum(actionPriorityOptions),
-    targetDate: z.string().trim().min(1),
+    targetDate: z.string().trim().regex(/^\d{4}-\d{2}-\d{2}$/, "Target date must use YYYY-MM-DD format."),
   })
   .refine((value) => Boolean(value.riskId || value.controlId), {
     path: ["riskId"],

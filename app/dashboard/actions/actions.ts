@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 
 import { recordAuditEvent } from "@/lib/audit/log";
 import { requireSessionProfile } from "@/lib/auth/profile";
+import { toUserErrorMessage } from "@/lib/forms/error-message";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import {
   actionPlanFormSchema,
@@ -11,8 +12,8 @@ import {
   buildActionPlanMutation,
 } from "@/lib/validators/action-plan";
 
-function encodeMessage(message: string) {
-  return encodeURIComponent(message);
+function encodeMessage(message: string | null | undefined, fallback = "Request could not be completed.") {
+  return encodeURIComponent(toUserErrorMessage(message, fallback));
 }
 
 function parseActionPlanPayload(formData: FormData) {
@@ -28,14 +29,72 @@ function parseActionPlanPayload(formData: FormData) {
   });
 }
 
+type IdRow = {
+  id: string;
+};
+
+async function validateActionPlanReferences(input: {
+  riskId: string | null;
+  controlId: string | null;
+  ownerProfileId: string | null;
+}) {
+  const supabase = await createSupabaseServerClient();
+
+  if (input.ownerProfileId) {
+    const { data: owner } = await supabase
+      .from("profiles")
+      .select("id")
+      .eq("id", input.ownerProfileId)
+      .maybeSingle<IdRow>();
+
+    if (!owner) {
+      return "Selected owner does not exist.";
+    }
+  }
+
+  if (input.riskId) {
+    const { data: risk } = await supabase
+      .from("risks")
+      .select("id")
+      .eq("id", input.riskId)
+      .is("deleted_at", null)
+      .maybeSingle<IdRow>();
+
+    if (!risk) {
+      return "Selected risk does not exist or is archived.";
+    }
+  }
+
+  if (input.controlId) {
+    const { data: control } = await supabase
+      .from("controls")
+      .select("id")
+      .eq("id", input.controlId)
+      .is("deleted_at", null)
+      .maybeSingle<IdRow>();
+
+    if (!control) {
+      return "Selected control does not exist or is archived.";
+    }
+  }
+
+  return null;
+}
+
 export async function createActionPlanAction(formData: FormData) {
   const profile = await requireSessionProfile("contributor");
   const parsed = parseActionPlanPayload(formData);
 
   if (!parsed.success) {
     redirect(
-      `/dashboard/actions/new?error=${encodeMessage(parsed.error.issues[0]?.message ?? "Invalid action plan payload")}`,
+      `/dashboard/actions/new?error=${encodeMessage(parsed.error.issues[0]?.message, "Submitted action plan fields are invalid.")}`,
     );
+  }
+
+  const referenceError = await validateActionPlanReferences(parsed.data);
+
+  if (referenceError) {
+    redirect(`/dashboard/actions/new?error=${encodeMessage(referenceError)}`);
   }
 
   const supabase = await createSupabaseServerClient();
@@ -52,7 +111,7 @@ export async function createActionPlanAction(formData: FormData) {
 
   if (error || !data) {
     redirect(
-      `/dashboard/actions/new?error=${encodeMessage(error?.message ?? "Could not create action plan")}`,
+      `/dashboard/actions/new?error=${encodeMessage(error?.message, "Could not create action plan.")}`,
     );
   }
 
@@ -85,8 +144,14 @@ export async function updateActionPlanAction(formData: FormData) {
 
   if (!parsed.success) {
     redirect(
-      `/dashboard/actions/${actionPlanIdResult.data}/edit?error=${encodeMessage(parsed.error.issues[0]?.message ?? "Invalid action plan payload")}`,
+      `/dashboard/actions/${actionPlanIdResult.data}/edit?error=${encodeMessage(parsed.error.issues[0]?.message, "Submitted action plan fields are invalid.")}`,
     );
+  }
+
+  const referenceError = await validateActionPlanReferences(parsed.data);
+
+  if (referenceError) {
+    redirect(`/dashboard/actions/${actionPlanIdResult.data}/edit?error=${encodeMessage(referenceError)}`);
   }
 
   const mutation = buildActionPlanMutation(parsed.data, profile.id);

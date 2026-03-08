@@ -3,10 +3,12 @@ import { notFound } from "next/navigation";
 
 import { archiveRiskAction } from "@/app/dashboard/risks/actions";
 import { AuditLogSection } from "@/components/audit/audit-log-section";
+import { FeedbackAlert } from "@/components/ui/feedback-alert";
 import { buttonVariants } from "@/components/ui/button";
 import { EvidenceListSection } from "@/components/evidence/evidence-list-section";
 import { getAuditEntries } from "@/lib/audit/log";
 import { requireSessionProfile } from "@/lib/auth/profile";
+import { hasRole } from "@/lib/permissions/roles";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 type RiskDetail = {
@@ -66,7 +68,9 @@ export default async function RiskDetailPage({
   params: Promise<{ id: string }>;
   searchParams: Promise<{ error?: string }>;
 }) {
-  await requireSessionProfile("viewer");
+  const profile = await requireSessionProfile("viewer");
+  const canEdit = hasRole("contributor", profile.role);
+  const canArchive = hasRole("manager", profile.role);
 
   const { id } = await params;
   const query = await searchParams;
@@ -89,28 +93,30 @@ export default async function RiskDetailPage({
           <p className="mt-2 text-sm text-muted-foreground">{risk.category}</p>
         </div>
 
-        <div className="flex gap-2">
-          <Link
-            href={`/dashboard/risks/${risk.id}/edit`}
-            className={buttonVariants({ variant: "outline" })}
-          >
-            Edit
-          </Link>
+        {canEdit || canArchive ? (
+          <div className="flex gap-2">
+            {canEdit ? (
+              <Link
+                href={`/dashboard/risks/${risk.id}/edit`}
+                className={buttonVariants({ variant: "outline" })}
+              >
+                Edit
+              </Link>
+            ) : null}
 
-          <form action={archiveRiskAction}>
-            <input type="hidden" name="riskId" value={risk.id} />
-            <button type="submit" className={buttonVariants({ variant: "outline" })}>
-              Archive
-            </button>
-          </form>
-        </div>
+            {canArchive ? (
+              <form action={archiveRiskAction}>
+                <input type="hidden" name="riskId" value={risk.id} />
+                <button type="submit" className={buttonVariants({ variant: "outline" })}>
+                  Archive
+                </button>
+              </form>
+            ) : null}
+          </div>
+        ) : null}
       </div>
 
-      {query.error ? (
-        <p className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
-          {decodeURIComponent(query.error)}
-        </p>
-      ) : null}
+      {query.error ? <FeedbackAlert message={decodeURIComponent(query.error)} /> : null}
 
       <div className="rounded-xl border bg-card p-6">
         <p className="text-sm text-muted-foreground">Description</p>
@@ -153,6 +159,7 @@ export default async function RiskDetailPage({
         emptyMessage="No evidence linked to this risk."
         items={evidence}
         createHref={`/dashboard/evidence/new?riskId=${risk.id}`}
+        canCreate={canEdit}
       />
 
       <AuditLogSection items={auditEntries} />

@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { buttonVariants } from "@/components/ui/button";
+import { FeedbackAlert } from "@/components/ui/feedback-alert";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils/cn";
 import { riskStatusOptions, type RiskStatus } from "@/lib/scoring/risk";
@@ -28,14 +29,14 @@ const inputClassName =
 
 export function RiskForm({ mode, action, defaults, error }: RiskFormProps) {
   return (
-    <form action={action} className="space-y-6 rounded-xl border bg-card p-6 shadow-sm">
+    <form
+      action={action}
+      aria-describedby={error ? "risk-form-error" : undefined}
+      className="space-y-6 rounded-xl border bg-card p-6 shadow-sm"
+    >
       {defaults?.riskId ? <input type="hidden" name="riskId" value={defaults.riskId} /> : null}
 
-      {error ? (
-        <p className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
-          {error}
-        </p>
-      ) : null}
+      {error ? <FeedbackAlert id="risk-form-error" message={error} /> : null}
 
       <div className="grid gap-5 md:grid-cols-2">
         <div className="space-y-2 md:col-span-2">

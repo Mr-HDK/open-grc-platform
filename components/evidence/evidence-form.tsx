@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { buttonVariants } from "@/components/ui/button";
+import { FeedbackAlert } from "@/components/ui/feedback-alert";
 import { Input } from "@/components/ui/input";
 
 type Option = {
@@ -30,12 +31,12 @@ export function EvidenceForm({
   error,
 }: EvidenceFormProps) {
   return (
-    <form action={action} className="space-y-6 rounded-xl border bg-card p-6 shadow-sm">
-      {error ? (
-        <p className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
-          {error}
-        </p>
-      ) : null}
+    <form
+      action={action}
+      aria-describedby={error ? "evidence-form-error" : undefined}
+      className="space-y-6 rounded-xl border bg-card p-6 shadow-sm"
+    >
+      {error ? <FeedbackAlert id="evidence-form-error" message={error} /> : null}
 
       <div className="grid gap-5 md:grid-cols-2">
         <div className="space-y-2 md:col-span-2">

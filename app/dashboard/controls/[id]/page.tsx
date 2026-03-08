@@ -3,10 +3,14 @@ import { notFound } from "next/navigation";
 
 import { archiveControlAction } from "@/app/dashboard/controls/actions";
 import { AuditLogSection } from "@/components/audit/audit-log-section";
+import { LinkedRisksSection } from "@/components/controls/linked-risks-section";
+import { ControlFrameworkMappingsSection } from "@/components/frameworks/control-framework-mappings-section";
+import { FeedbackAlert } from "@/components/ui/feedback-alert";
 import { buttonVariants } from "@/components/ui/button";
 import { EvidenceListSection } from "@/components/evidence/evidence-list-section";
 import { getAuditEntries } from "@/lib/audit/log";
 import { requireSessionProfile } from "@/lib/auth/profile";
+import { hasRole } from "@/lib/permissions/roles";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 type ControlDetail = {
@@ -103,7 +107,16 @@ async function getLinkedRisks(controlId: string) {
     .eq("control_id", controlId)
     .returns<LinkedRiskRow[]>();
 
-  return (data ?? []).filter((row) => row.risks && !row.risks.deleted_at);
+  return (data ?? [])
+    .filter((row) => row.risks && !row.risks.deleted_at)
+    .map((row) => ({
+      id: row.risks!.id,
+      title: row.risks!.title,
+      status: row.risks!.status,
+      level: row.risks!.level,
+      score: row.risks!.score,
+      rationale: row.rationale,
+    }));
 }
 
 async function getControlEvidence(controlId: string) {
@@ -178,7 +191,9 @@ export default async function ControlDetailPage({
   params: Promise<{ id: string }>;
   searchParams: Promise<{ error?: string }>;
 }) {
-  await requireSessionProfile("viewer");
+  const profile = await requireSessionProfile("viewer");
+  const canEdit = hasRole("contributor", profile.role);
+  const canArchive = hasRole("manager", profile.role);
 
   const { id } = await params;
   const query = await searchParams;
@@ -207,28 +222,30 @@ export default async function ControlDetailPage({
           <h1 className="text-2xl font-semibold tracking-tight">{control.title}</h1>
         </div>
 
-        <div className="flex gap-2">
-          <Link
-            href={`/dashboard/controls/${control.id}/edit`}
-            className={buttonVariants({ variant: "outline" })}
-          >
-            Edit
-          </Link>
+        {canEdit || canArchive ? (
+          <div className="flex gap-2">
+            {canEdit ? (
+              <Link
+                href={`/dashboard/controls/${control.id}/edit`}
+                className={buttonVariants({ variant: "outline" })}
+              >
+                Edit
+              </Link>
+            ) : null}
 
-          <form action={archiveControlAction}>
-            <input type="hidden" name="controlId" value={control.id} />
-            <button type="submit" className={buttonVariants({ variant: "outline" })}>
-              Archive
-            </button>
-          </form>
-        </div>
+            {canArchive ? (
+              <form action={archiveControlAction}>
+                <input type="hidden" name="controlId" value={control.id} />
+                <button type="submit" className={buttonVariants({ variant: "outline" })}>
+                  Archive
+                </button>
+              </form>
+            ) : null}
+          </div>
+        ) : null}
       </div>
 
-      {query.error ? (
-        <p className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
-          {decodeURIComponent(query.error)}
-        </p>
-      ) : null}
+      {query.error ? <FeedbackAlert message={decodeURIComponent(query.error)} /> : null}
 
       <div className="rounded-xl border bg-card p-6">
         <p className="text-sm text-muted-foreground">Description</p>
@@ -264,58 +281,16 @@ export default async function ControlDetailPage({
         </div>
       </div>
 
-      <section className="rounded-xl border bg-card p-6">
-        <h2 className="text-lg font-semibold tracking-tight">Linked risks</h2>
+      <LinkedRisksSection items={linkedRisks} />
 
-        {linkedRisks.length === 0 ? (
-          <p className="mt-3 text-sm text-muted-foreground">No risks linked to this control.</p>
-        ) : (
-          <ul className="mt-4 space-y-3">
-            {linkedRisks.map((link) => (
-              <li key={link.risks?.id} className="rounded-lg border p-3">
-                <Link
-                  href={`/dashboard/risks/${link.risks?.id}`}
-                  className="text-sm font-medium hover:underline"
-                >
-                  {link.risks?.title}
-                </Link>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  {link.risks?.status} | {link.risks?.level} | score {link.risks?.score}
-                </p>
-                {link.rationale ? (
-                  <p className="mt-2 text-xs text-muted-foreground">{link.rationale}</p>
-                ) : null}
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
-
-      <section className="rounded-xl border bg-card p-6">
-        <h2 className="text-lg font-semibold tracking-tight">Framework mappings</h2>
-
-        {frameworkMappings.length === 0 ? (
-          <p className="mt-3 text-sm text-muted-foreground">No framework requirements mapped.</p>
-        ) : (
-          <ul className="mt-4 space-y-3">
-            {frameworkMappings.map((mapping) => (
-              <li key={mapping.requirementId} className="rounded-lg border p-3">
-                <p className="text-sm font-medium">
-                  {mapping.frameworkCode} {mapping.referenceCode}
-                </p>
-                <p className="mt-1 text-xs text-muted-foreground">{mapping.title}</p>
-                <p className="mt-1 text-xs text-muted-foreground">Version {mapping.frameworkVersion}</p>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
+      <ControlFrameworkMappingsSection items={frameworkMappings} />
 
       <EvidenceListSection
         title="Evidence"
         emptyMessage="No evidence linked to this control."
         items={evidence}
         createHref={`/dashboard/evidence/new?controlId=${control.id}`}
+        canCreate={canEdit}
       />
 
       <AuditLogSection items={auditEntries} />

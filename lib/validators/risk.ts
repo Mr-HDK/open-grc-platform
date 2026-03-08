@@ -18,7 +18,10 @@ export const riskFormSchema = z.object({
     .string()
     .trim()
     .optional()
-    .transform((value) => value || null),
+    .transform((value) => value || null)
+    .refine((value) => value === null || /^\d{4}-\d{2}-\d{2}$/.test(value), {
+      message: "Due date must use YYYY-MM-DD format.",
+    }),
 });
 
 export const riskIdSchema = z.string().uuid();
