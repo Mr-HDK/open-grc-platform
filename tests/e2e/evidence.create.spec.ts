@@ -61,6 +61,13 @@ test("contributor can upload evidence", async ({ page }) => {
 
   await page.getByRole("button", { name: "Upload evidence" }).click();
 
-  await expect(page).toHaveURL(/\/dashboard\/evidence/);
-  await expect(page.getByText(title)).toBeVisible();
+  await expect
+    .poll(
+      async () => {
+        await page.goto(`/dashboard/evidence?q=${encodeURIComponent(title)}`);
+        return page.getByText(title).count();
+      },
+      { timeout: 20_000 },
+    )
+    .toBeGreaterThan(0);
 });

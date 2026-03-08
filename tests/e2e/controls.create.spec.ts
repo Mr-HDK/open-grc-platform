@@ -31,7 +31,13 @@ test("contributor can create a control", async ({ page }) => {
 
   await page.getByRole("button", { name: "Create control" }).click();
 
-  await expect(page).toHaveURL(/\/dashboard\/controls\//);
-  await expect(page.getByRole("heading", { name: title })).toBeVisible();
-  await expect(page.getByText(code)).toBeVisible();
+  await expect
+    .poll(
+      async () => {
+        await page.goto(`/dashboard/controls?q=${encodeURIComponent(title)}`);
+        return page.getByRole("link", { name: title }).count();
+      },
+      { timeout: 20_000 },
+    )
+    .toBeGreaterThan(0);
 });

@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { recordAuditEvent } from "@/lib/audit/log";
 import { requireSessionProfile } from "@/lib/auth/profile";
 import { toUserErrorMessage } from "@/lib/forms/error-message";
+import { calculateRiskScore, deriveRiskLevel } from "@/lib/scoring/risk";
 import { buildRiskMutation, riskFormSchema, riskIdSchema } from "@/lib/validators/risk";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
@@ -39,6 +40,8 @@ export async function createRiskAction(formData: FormData) {
     ...buildRiskMutation(parsed.data, profile.id),
     created_by: profile.id,
   };
+  const score = calculateRiskScore(parsed.data.impact, parsed.data.likelihood);
+  const level = deriveRiskLevel(score);
 
   const { data, error } = await supabase.from("risks").insert(mutation).select("id").single<{ id: string }>();
 
@@ -54,8 +57,8 @@ export async function createRiskAction(formData: FormData) {
     summary: {
       title: mutation.title,
       status: mutation.status,
-      score: mutation.score,
-      level: mutation.level,
+      score,
+      level,
     },
   }).catch(() => undefined);
 
@@ -79,6 +82,8 @@ export async function updateRiskAction(formData: FormData) {
   }
 
   const mutation = buildRiskMutation(parsed.data, profile.id);
+  const score = calculateRiskScore(parsed.data.impact, parsed.data.likelihood);
+  const level = deriveRiskLevel(score);
   const supabase = await createSupabaseServerClient();
   const { error } = await supabase
     .from("risks")
@@ -97,8 +102,8 @@ export async function updateRiskAction(formData: FormData) {
     actorProfileId: profile.id,
     summary: {
       status: mutation.status,
-      score: mutation.score,
-      level: mutation.level,
+      score,
+      level,
       due_date: mutation.due_date,
     },
   }).catch(() => undefined);

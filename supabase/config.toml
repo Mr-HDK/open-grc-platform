@@ -1,0 +1,5 @@
+project_id = "velcopwfjgmnmxrqvhqz"
+
+[db.seed]
+enabled = true
+sql_paths = ["./seed/seed.sql"]

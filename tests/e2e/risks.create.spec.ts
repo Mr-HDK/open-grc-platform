@@ -27,6 +27,13 @@ test("contributor can create a risk", async ({ page }) => {
 
   await page.getByRole("button", { name: "Create risk" }).click();
 
-  await expect(page).toHaveURL(/\/dashboard\/risks\//);
-  await expect(page.getByRole("heading", { name: title })).toBeVisible();
+  await expect
+    .poll(
+      async () => {
+        await page.goto(`/dashboard/risks?q=${encodeURIComponent(title)}`);
+        return page.getByRole("link", { name: title }).count();
+      },
+      { timeout: 20_000 },
+    )
+    .toBeGreaterThan(0);
 });

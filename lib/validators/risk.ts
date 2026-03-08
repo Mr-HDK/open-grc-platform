@@ -1,8 +1,6 @@
 import { z } from "zod";
 
 import {
-  deriveRiskLevel,
-  calculateRiskScore,
   riskLevelOptions,
   riskStatusOptions,
 } from "@/lib/scoring/risk";
@@ -29,17 +27,12 @@ export const riskIdSchema = z.string().uuid();
 export type RiskFormInput = z.infer<typeof riskFormSchema>;
 
 export function buildRiskMutation(payload: RiskFormInput, actorProfileId: string) {
-  const score = calculateRiskScore(payload.impact, payload.likelihood);
-  const level = deriveRiskLevel(score);
-
   return {
     title: payload.title,
     description: payload.description,
     category: payload.category,
     impact: payload.impact,
     likelihood: payload.likelihood,
-    score,
-    level,
     status: payload.status,
     due_date: payload.dueDate,
     updated_by: actorProfileId,

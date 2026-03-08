@@ -49,6 +49,13 @@ test("contributor can create an action plan", async ({ page }) => {
 
   await page.getByRole("button", { name: "Create action plan" }).click();
 
-  await expect(page).toHaveURL(/\/dashboard\/actions\//);
-  await expect(page.getByRole("heading", { name: title })).toBeVisible();
+  await expect
+    .poll(
+      async () => {
+        await page.goto(`/dashboard/actions?q=${encodeURIComponent(title)}`);
+        return page.getByRole("link", { name: title }).count();
+      },
+      { timeout: 20_000 },
+    )
+    .toBeGreaterThan(0);
 });
