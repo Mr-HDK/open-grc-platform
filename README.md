@@ -9,11 +9,13 @@ Internal GRC MVP scaffold based on Next.js App Router, TypeScript, Tailwind, and
 - Profile bootstrap (`profiles` table + `auth.users` trigger)
 - Protected dashboard routes and role-aware navigation
 - Risk Register module:
-  - list + search + filters
+  - list + search + filters (status, level, owner, category)
   - create + edit + detail
   - soft archive (manager+)
   - score calculation (`impact * likelihood`)
   - derived risk level (`low/medium/high/critical`)
+  - explicit owner assignment
+  - risk detail links to related controls and action plans
 - Controls module:
   - controls migration + pivot table `risk_controls`
   - list + search + filters
@@ -186,6 +188,10 @@ The workflow runs:
   - strict UUID/date format checks on linked fields
   - linked-record existence checks before write operations
   - normalized user-facing error messages for common database errors
+- Database RLS now enforces minimum app roles for write operations:
+  - `contributor+` for risks/controls/actions/evidence creation and updates
+  - `manager+` for evidence archive updates
+  - `admin` for framework mapping writes
 - Audit log events are best-effort and do not block core create/update/archive operations.
 - Default E2E run is serial (`npm run test:e2e`) for deterministic CI/dev baselines.
 - `npm run test:e2e:parallel` is available for faster local stress runs.

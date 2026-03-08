@@ -9,11 +9,13 @@ import { riskLevelOptions, riskStatusOptions } from "@/lib/scoring/risk";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { cn } from "@/lib/utils/cn";
 import { isRiskLevel, isRiskStatus } from "@/lib/validators/risk";
+import { z } from "zod";
 
 type RiskListItem = {
   id: string;
   title: string;
   category: string;
+  owner_profile_id: string | null;
   impact: number;
   likelihood: number;
   score: number;
@@ -23,23 +25,59 @@ type RiskListItem = {
   updated_at: string;
 };
 
+type OwnerOption = {
+  id: string;
+  email: string;
+  full_name: string | null;
+};
+
+type CategoryOption = {
+  category: string;
+};
+
 export default async function RisksPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; status?: string; level?: string; error?: string }>;
+  searchParams: Promise<{
+    q?: string;
+    status?: string;
+    level?: string;
+    category?: string;
+    ownerId?: string;
+    error?: string;
+  }>;
 }) {
   const profile = await requireSessionProfile("viewer");
   const canEdit = hasRole("contributor", profile.role);
+  const supabase = await createSupabaseServerClient();
+  const [{ data: owners }, { data: categoryRows }] = await Promise.all([
+    supabase.from("profiles").select("id, email, full_name").order("email").returns<OwnerOption[]>(),
+    supabase.from("risks").select("category").is("deleted_at", null).order("category").returns<CategoryOption[]>(),
+  ]);
 
   const params = await searchParams;
   const q = params.q?.trim() ?? "";
   const status = isRiskStatus(params.status) ? params.status : "";
   const level = isRiskLevel(params.level) ? params.level : "";
+  const ownerById = new Map(
+    (owners ?? []).map((owner) => [
+      owner.id,
+      owner.full_name ? `${owner.full_name} (${owner.email})` : owner.email,
+    ]),
+  );
+  const categoryOptions = Array.from(
+    new Set((categoryRows ?? []).map((row) => row.category).filter(Boolean)),
+  );
+  const category = categoryOptions.includes(params.category ?? "") ? (params.category ?? "") : "";
+  const ownerIdInput = params.ownerId?.trim() ?? "";
+  const ownerId =
+    z.string().uuid().safeParse(ownerIdInput).success && ownerById.has(ownerIdInput)
+      ? ownerIdInput
+      : "";
 
-  const supabase = await createSupabaseServerClient();
   let query = supabase
     .from("risks")
-    .select("id, title, category, impact, likelihood, score, level, status, due_date, updated_at")
+    .select("id, title, category, owner_profile_id, impact, likelihood, score, level, status, due_date, updated_at")
     .is("deleted_at", null)
     .order("updated_at", { ascending: false });
 
@@ -53,6 +91,14 @@ export default async function RisksPage({
 
   if (level) {
     query = query.eq("level", level);
+  }
+
+  if (category) {
+    query = query.eq("category", category);
+  }
+
+  if (ownerId) {
+    query = query.eq("owner_profile_id", ownerId);
   }
 
   const { data, error } = await query.returns<RiskListItem[]>();
@@ -75,7 +121,7 @@ export default async function RisksPage({
 
       {params.error ? <FeedbackAlert message={decodeURIComponent(params.error)} /> : null}
 
-      <form className="grid gap-3 rounded-lg border bg-card p-4 md:grid-cols-4">
+      <form className="grid gap-3 rounded-lg border bg-card p-4 md:grid-cols-6">
         <Input name="q" placeholder="Search by title" defaultValue={q} />
 
         <select
@@ -88,6 +134,34 @@ export default async function RisksPage({
           {riskStatusOptions.map((option) => (
             <option key={option} value={option}>
               {option}
+            </option>
+          ))}
+        </select>
+
+        <select
+          name="category"
+          aria-label="Filter by category"
+          defaultValue={category}
+          className="h-10 rounded-md border border-slate-200 bg-white px-3 text-sm"
+        >
+          <option value="">All categories</option>
+          {categoryOptions.map((option) => (
+            <option key={option} value={option}>
+              {option}
+            </option>
+          ))}
+        </select>
+
+        <select
+          name="ownerId"
+          aria-label="Filter by owner"
+          defaultValue={ownerId}
+          className="h-10 rounded-md border border-slate-200 bg-white px-3 text-sm"
+        >
+          <option value="">All owners</option>
+          {(owners ?? []).map((owner) => (
+            <option key={owner.id} value={owner.id}>
+              {owner.full_name ? `${owner.full_name} (${owner.email})` : owner.email}
             </option>
           ))}
         </select>
@@ -125,6 +199,9 @@ export default async function RisksPage({
                 Category
               </th>
               <th scope="col" className="px-4 py-3">
+                Owner
+              </th>
+              <th scope="col" className="px-4 py-3">
                 Status
               </th>
               <th scope="col" className="px-4 py-3">
@@ -147,6 +224,9 @@ export default async function RisksPage({
                   </Link>
                 </td>
                 <td className="px-4 py-3 text-muted-foreground">{risk.category}</td>
+                <td className="px-4 py-3 text-muted-foreground">
+                  {risk.owner_profile_id ? (ownerById.get(risk.owner_profile_id) ?? "Unknown user") : "-"}
+                </td>
                 <td className="px-4 py-3">{risk.status}</td>
                 <td className="px-4 py-3">{risk.score}</td>
                 <td className="px-4 py-3 capitalize">{risk.level}</td>
@@ -156,7 +236,7 @@ export default async function RisksPage({
 
             {!error && (data?.length ?? 0) === 0 ? (
               <tr>
-                <td className="px-4 py-8 text-center text-muted-foreground" colSpan={6}>
+                <td className="px-4 py-8 text-center text-muted-foreground" colSpan={7}>
                   No risks found for the current filters.
                 </td>
               </tr>

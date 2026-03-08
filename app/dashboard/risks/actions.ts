@@ -18,11 +18,31 @@ function parseRiskPayload(formData: FormData) {
     title: formData.get("title"),
     description: formData.get("description"),
     category: formData.get("category"),
+    ownerProfileId: formData.get("ownerProfileId"),
     impact: formData.get("impact"),
     likelihood: formData.get("likelihood"),
     status: formData.get("status"),
     dueDate: formData.get("dueDate"),
   });
+}
+
+type IdRow = {
+  id: string;
+};
+
+async function validateOwnerProfile(ownerProfileId: string | null) {
+  if (!ownerProfileId) {
+    return null;
+  }
+
+  const supabase = await createSupabaseServerClient();
+  const { data: owner } = await supabase
+    .from("profiles")
+    .select("id")
+    .eq("id", ownerProfileId)
+    .maybeSingle<IdRow>();
+
+  return owner ? null : "Selected owner does not exist.";
 }
 
 export async function createRiskAction(formData: FormData) {
@@ -33,6 +53,11 @@ export async function createRiskAction(formData: FormData) {
     redirect(
       `/dashboard/risks/new?error=${encodeMessage(parsed.error.issues[0]?.message, "Submitted risk fields are invalid.")}`,
     );
+  }
+
+  const ownerError = await validateOwnerProfile(parsed.data.ownerProfileId);
+  if (ownerError) {
+    redirect(`/dashboard/risks/new?error=${encodeMessage(ownerError)}`);
   }
 
   const supabase = await createSupabaseServerClient();
@@ -59,6 +84,7 @@ export async function createRiskAction(formData: FormData) {
       status: mutation.status,
       score,
       level,
+      owner_profile_id: mutation.owner_profile_id,
     },
   }).catch(() => undefined);
 
@@ -79,6 +105,11 @@ export async function updateRiskAction(formData: FormData) {
     redirect(
       `/dashboard/risks/${riskIdResult.data}/edit?error=${encodeMessage(parsed.error.issues[0]?.message, "Submitted risk fields are invalid.")}`,
     );
+  }
+
+  const ownerError = await validateOwnerProfile(parsed.data.ownerProfileId);
+  if (ownerError) {
+    redirect(`/dashboard/risks/${riskIdResult.data}/edit?error=${encodeMessage(ownerError)}`);
   }
 
   const mutation = buildRiskMutation(parsed.data, profile.id);
@@ -105,6 +136,7 @@ export async function updateRiskAction(formData: FormData) {
       score,
       level,
       due_date: mutation.due_date,
+      owner_profile_id: mutation.owner_profile_id,
     },
   }).catch(() => undefined);
 

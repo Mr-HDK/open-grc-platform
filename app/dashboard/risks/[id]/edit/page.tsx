@@ -10,22 +10,40 @@ type RiskEditData = {
   title: string;
   description: string;
   category: string;
+  owner_profile_id: string | null;
   impact: number;
   likelihood: number;
   status: "draft" | "open" | "mitigated" | "accepted" | "closed";
   due_date: string | null;
 };
 
+type OwnerRow = {
+  id: string;
+  email: string;
+  full_name: string | null;
+};
+
 async function getRiskForEdit(riskId: string) {
   const supabase = await createSupabaseServerClient();
   const { data } = await supabase
     .from("risks")
-    .select("id, title, description, category, impact, likelihood, status, due_date")
+    .select("id, title, description, category, owner_profile_id, impact, likelihood, status, due_date")
     .eq("id", riskId)
     .is("deleted_at", null)
     .maybeSingle<RiskEditData>();
 
   return data;
+}
+
+async function getOwnerOptions() {
+  const supabase = await createSupabaseServerClient();
+  const { data } = await supabase
+    .from("profiles")
+    .select("id, email, full_name")
+    .order("email")
+    .returns<OwnerRow[]>();
+
+  return data ?? [];
 }
 
 export default async function EditRiskPage({
@@ -39,7 +57,7 @@ export default async function EditRiskPage({
 
   const { id } = await params;
   const query = await searchParams;
-  const risk = await getRiskForEdit(id);
+  const [risk, owners] = await Promise.all([getRiskForEdit(id), getOwnerOptions()]);
 
   if (!risk) {
     notFound();
@@ -55,12 +73,17 @@ export default async function EditRiskPage({
       <RiskForm
         mode="edit"
         action={updateRiskAction}
+        ownerOptions={owners.map((owner) => ({
+          id: owner.id,
+          label: owner.full_name ? `${owner.full_name} (${owner.email})` : owner.email,
+        }))}
         error={query.error ? decodeURIComponent(query.error) : null}
         defaults={{
           riskId: risk.id,
           title: risk.title,
           description: risk.description,
           category: risk.category,
+          ownerProfileId: risk.owner_profile_id,
           impact: risk.impact,
           likelihood: risk.likelihood,
           status: risk.status,

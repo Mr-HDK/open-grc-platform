@@ -5,10 +5,20 @@ import {
   riskStatusOptions,
 } from "@/lib/scoring/risk";
 
+const optionalUuidField = z
+  .string()
+  .trim()
+  .optional()
+  .transform((value) => (value ? value : null))
+  .refine((value) => value === null || z.string().uuid().safeParse(value).success, {
+    message: "Owner identifier must be a valid UUID.",
+  });
+
 export const riskFormSchema = z.object({
   title: z.string().trim().min(3).max(140),
   description: z.string().trim().min(10).max(5000),
   category: z.string().trim().min(2).max(80),
+  ownerProfileId: optionalUuidField,
   impact: z.coerce.number().int().min(1).max(5),
   likelihood: z.coerce.number().int().min(1).max(5),
   status: z.enum(riskStatusOptions),
@@ -31,6 +41,7 @@ export function buildRiskMutation(payload: RiskFormInput, actorProfileId: string
     title: payload.title,
     description: payload.description,
     category: payload.category,
+    owner_profile_id: payload.ownerProfileId,
     impact: payload.impact,
     likelihood: payload.likelihood,
     status: payload.status,

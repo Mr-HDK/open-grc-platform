@@ -2,13 +2,27 @@ import { RiskForm } from "@/components/risks/risk-form";
 
 import { createRiskAction } from "@/app/dashboard/risks/actions";
 import { requireSessionProfile } from "@/lib/auth/profile";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
+
+type OwnerRow = {
+  id: string;
+  email: string;
+  full_name: string | null;
+};
 
 export default async function NewRiskPage({
   searchParams,
 }: {
   searchParams: Promise<{ error?: string }>;
 }) {
-  await requireSessionProfile("contributor");
+  const profile = await requireSessionProfile("contributor");
+  const supabase = await createSupabaseServerClient();
+
+  const { data: owners } = await supabase
+    .from("profiles")
+    .select("id, email, full_name")
+    .order("email")
+    .returns<OwnerRow[]>();
 
   const params = await searchParams;
 
@@ -24,6 +38,11 @@ export default async function NewRiskPage({
       <RiskForm
         mode="create"
         action={createRiskAction}
+        ownerOptions={(owners ?? []).map((owner) => ({
+          id: owner.id,
+          label: owner.full_name ? `${owner.full_name} (${owner.email})` : owner.email,
+        }))}
+        defaults={{ ownerProfileId: profile.id }}
         error={params.error ? decodeURIComponent(params.error) : null}
       />
     </div>

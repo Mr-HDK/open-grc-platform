@@ -16,6 +16,7 @@ type RiskDetail = {
   title: string;
   description: string;
   category: string;
+  owner_profile_id: string | null;
   impact: number;
   likelihood: number;
   score: number;
@@ -34,12 +35,37 @@ type EvidenceRow = {
   created_at: string;
 };
 
+type OwnerRow = {
+  id: string;
+  email: string;
+  full_name: string | null;
+};
+
+type LinkedControlRow = {
+  rationale: string | null;
+  controls: {
+    id: string;
+    code: string;
+    title: string;
+    effectiveness_status: string;
+    deleted_at: string | null;
+  } | null;
+};
+
+type LinkedActionRow = {
+  id: string;
+  title: string;
+  status: string;
+  priority: string;
+  target_date: string;
+};
+
 async function getRiskById(riskId: string) {
   const supabase = await createSupabaseServerClient();
   const { data } = await supabase
     .from("risks")
     .select(
-      "id, title, description, category, impact, likelihood, score, level, status, due_date, created_at, updated_at",
+      "id, title, description, category, owner_profile_id, impact, likelihood, score, level, status, due_date, created_at, updated_at",
     )
     .eq("id", riskId)
     .is("deleted_at", null)
@@ -57,6 +83,53 @@ async function getRiskEvidence(riskId: string) {
     .is("archived_at", null)
     .order("created_at", { ascending: false })
     .returns<EvidenceRow[]>();
+
+  return data ?? [];
+}
+
+async function getOwner(ownerId: string | null) {
+  if (!ownerId) {
+    return null;
+  }
+
+  const supabase = await createSupabaseServerClient();
+  const { data } = await supabase
+    .from("profiles")
+    .select("id, email, full_name")
+    .eq("id", ownerId)
+    .maybeSingle<OwnerRow>();
+
+  return data;
+}
+
+async function getLinkedControls(riskId: string) {
+  const supabase = await createSupabaseServerClient();
+  const { data } = await supabase
+    .from("risk_controls")
+    .select("rationale, controls(id, code, title, effectiveness_status, deleted_at)")
+    .eq("risk_id", riskId)
+    .returns<LinkedControlRow[]>();
+
+  return (data ?? [])
+    .filter((row) => row.controls && !row.controls.deleted_at)
+    .map((row) => ({
+      id: row.controls!.id,
+      code: row.controls!.code,
+      title: row.controls!.title,
+      effectivenessStatus: row.controls!.effectiveness_status,
+      rationale: row.rationale,
+    }));
+}
+
+async function getLinkedActionPlans(riskId: string) {
+  const supabase = await createSupabaseServerClient();
+  const { data } = await supabase
+    .from("action_plans")
+    .select("id, title, status, priority, target_date")
+    .eq("risk_id", riskId)
+    .is("deleted_at", null)
+    .order("target_date", { ascending: true })
+    .returns<LinkedActionRow[]>();
 
   return data ?? [];
 }
@@ -80,7 +153,10 @@ export default async function RiskDetailPage({
     notFound();
   }
 
-  const [evidence, auditEntries] = await Promise.all([
+  const [owner, linkedControls, linkedActionPlans, evidence, auditEntries] = await Promise.all([
+    getOwner(risk.owner_profile_id),
+    getLinkedControls(risk.id),
+    getLinkedActionPlans(risk.id),
     getRiskEvidence(risk.id),
     getAuditEntries("risk", risk.id),
   ]);
@@ -129,6 +205,12 @@ export default async function RiskDetailPage({
           <p className="mt-1 text-sm font-medium">{risk.status}</p>
         </div>
         <div>
+          <p className="text-xs uppercase tracking-wide text-muted-foreground">Owner</p>
+          <p className="mt-1 text-sm font-medium">
+            {owner ? (owner.full_name ? `${owner.full_name} (${owner.email})` : owner.email) : "-"}
+          </p>
+        </div>
+        <div>
           <p className="text-xs uppercase tracking-wide text-muted-foreground">Impact x Likelihood</p>
           <p className="mt-1 text-sm font-medium">
             {risk.impact} x {risk.likelihood}
@@ -153,6 +235,57 @@ export default async function RiskDetailPage({
           <p className="mt-1 text-sm font-medium">{new Date(risk.updated_at).toLocaleString()}</p>
         </div>
       </div>
+
+      <section className="rounded-xl border bg-card p-6">
+        <h2 className="text-lg font-semibold tracking-tight">Linked controls</h2>
+
+        {linkedControls.length === 0 ? (
+          <p className="mt-3 text-sm text-muted-foreground">No controls linked to this risk.</p>
+        ) : (
+          <ul className="mt-4 space-y-3">
+            {linkedControls.map((control) => (
+              <li key={control.id} className="rounded-lg border p-3">
+                <Link
+                  href={`/dashboard/controls/${control.id}`}
+                  className="text-sm font-medium hover:underline"
+                >
+                  {control.code} - {control.title}
+                </Link>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  effectiveness {control.effectivenessStatus}
+                </p>
+                {control.rationale ? (
+                  <p className="mt-2 text-xs text-muted-foreground">{control.rationale}</p>
+                ) : null}
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+
+      <section className="rounded-xl border bg-card p-6">
+        <h2 className="text-lg font-semibold tracking-tight">Linked action plans</h2>
+
+        {linkedActionPlans.length === 0 ? (
+          <p className="mt-3 text-sm text-muted-foreground">No action plans linked to this risk.</p>
+        ) : (
+          <ul className="mt-4 space-y-3">
+            {linkedActionPlans.map((actionPlan) => (
+              <li key={actionPlan.id} className="rounded-lg border p-3">
+                <Link
+                  href={`/dashboard/actions/${actionPlan.id}`}
+                  className="text-sm font-medium hover:underline"
+                >
+                  {actionPlan.title}
+                </Link>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  {actionPlan.status} | {actionPlan.priority} | target {actionPlan.target_date}
+                </p>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
 
       <EvidenceListSection
         title="Evidence"

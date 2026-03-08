@@ -6,11 +6,17 @@ import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils/cn";
 import { riskStatusOptions, type RiskStatus } from "@/lib/scoring/risk";
 
+type OwnerOption = {
+  id: string;
+  label: string;
+};
+
 type RiskFormDefaults = {
   riskId?: string;
   title?: string;
   description?: string;
   category?: string;
+  ownerProfileId?: string | null;
   impact?: number;
   likelihood?: number;
   status?: RiskStatus;
@@ -20,6 +26,7 @@ type RiskFormDefaults = {
 type RiskFormProps = {
   mode: "create" | "edit";
   action: (formData: FormData) => Promise<void>;
+  ownerOptions: OwnerOption[];
   defaults?: RiskFormDefaults;
   error?: string | null;
 };
@@ -27,7 +34,7 @@ type RiskFormProps = {
 const inputClassName =
   "min-h-[110px] w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm ring-offset-white placeholder:text-slate-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300";
 
-export function RiskForm({ mode, action, defaults, error }: RiskFormProps) {
+export function RiskForm({ mode, action, ownerOptions, defaults, error }: RiskFormProps) {
   return (
     <form
       action={action}
@@ -92,6 +99,25 @@ export function RiskForm({ mode, action, defaults, error }: RiskFormProps) {
             {riskStatusOptions.map((status) => (
               <option key={status} value={status}>
                 {status}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div className="space-y-2">
+          <label htmlFor="ownerProfileId" className="text-sm font-medium">
+            Owner
+          </label>
+          <select
+            id="ownerProfileId"
+            name="ownerProfileId"
+            defaultValue={defaults?.ownerProfileId ?? ""}
+            className="h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm"
+          >
+            <option value="">Unassigned</option>
+            {ownerOptions.map((owner) => (
+              <option key={owner.id} value={owner.id}>
+                {owner.label}
               </option>
             ))}
           </select>
