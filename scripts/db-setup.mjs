@@ -36,9 +36,15 @@ function loadEnvFile(filePath) {
 
 function readProjectEnv() {
   const cwd = process.cwd();
-  return {
+  const fileEnv = {
     ...loadEnvFile(path.join(cwd, ".env")),
     ...loadEnvFile(path.join(cwd, ".env.local")),
+  };
+
+  // In CI, secrets are injected via process.env and no .env.local file exists.
+  return {
+    ...fileEnv,
+    ...process.env,
   };
 }
 
