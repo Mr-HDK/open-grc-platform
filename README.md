@@ -47,6 +47,10 @@ Internal GRC MVP scaffold based on Next.js App Router, TypeScript, Tailwind, and
   - impact x likelihood heatmap
   - overdue actions list
   - controls due for review within 30 days
+- Audit Log module:
+  - `audit_log` table
+  - create/update/soft-delete tracking for risks, controls, and action plans
+  - audit history displayed on risk/control/action detail pages
 - SQL migrations and seed data
 - Playwright E2E smoke test + optional risk/control/action/evidence/framework tests
 
@@ -62,6 +66,7 @@ app/
     evidence/
     frameworks/
 components/
+  audit/
   layout/
   risks/
   controls/
@@ -69,6 +74,7 @@ components/
   evidence/
   ui/
 lib/
+  audit/
   auth/
   permissions/
   scoring/
@@ -115,6 +121,7 @@ Apply migrations in order:
 4. `supabase/migrations/00000000000004_action_plans.sql`
 5. `supabase/migrations/00000000000005_evidence.sql`
 6. `supabase/migrations/00000000000006_framework_mappings.sql`
+7. `supabase/migrations/00000000000007_audit_log.sql`
 
 Run seed:
 

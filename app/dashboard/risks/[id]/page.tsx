@@ -2,8 +2,10 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { archiveRiskAction } from "@/app/dashboard/risks/actions";
+import { AuditLogSection } from "@/components/audit/audit-log-section";
 import { buttonVariants } from "@/components/ui/button";
 import { EvidenceListSection } from "@/components/evidence/evidence-list-section";
+import { getAuditEntries } from "@/lib/audit/log";
 import { requireSessionProfile } from "@/lib/auth/profile";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
@@ -74,7 +76,10 @@ export default async function RiskDetailPage({
     notFound();
   }
 
-  const evidence = await getRiskEvidence(risk.id);
+  const [evidence, auditEntries] = await Promise.all([
+    getRiskEvidence(risk.id),
+    getAuditEntries("risk", risk.id),
+  ]);
 
   return (
     <div className="space-y-6">
@@ -149,6 +154,8 @@ export default async function RiskDetailPage({
         items={evidence}
         createHref={`/dashboard/evidence/new?riskId=${risk.id}`}
       />
+
+      <AuditLogSection items={auditEntries} />
     </div>
   );
 }

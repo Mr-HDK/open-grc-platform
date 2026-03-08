@@ -2,8 +2,10 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { archiveControlAction } from "@/app/dashboard/controls/actions";
+import { AuditLogSection } from "@/components/audit/audit-log-section";
 import { buttonVariants } from "@/components/ui/button";
 import { EvidenceListSection } from "@/components/evidence/evidence-list-section";
+import { getAuditEntries } from "@/lib/audit/log";
 import { requireSessionProfile } from "@/lib/auth/profile";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
@@ -187,11 +189,12 @@ export default async function ControlDetailPage({
     notFound();
   }
 
-  const [owner, linkedRisks, evidence, frameworkMappings] = await Promise.all([
+  const [owner, linkedRisks, evidence, frameworkMappings, auditEntries] = await Promise.all([
     getOwner(control.owner_profile_id),
     getLinkedRisks(control.id),
     getControlEvidence(control.id),
     getFrameworkMappings(control.id),
+    getAuditEntries("control", control.id),
   ]);
 
   return (
@@ -314,6 +317,8 @@ export default async function ControlDetailPage({
         items={evidence}
         createHref={`/dashboard/evidence/new?controlId=${control.id}`}
       />
+
+      <AuditLogSection items={auditEntries} />
     </div>
   );
 }

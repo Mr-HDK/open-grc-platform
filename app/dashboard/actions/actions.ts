@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation";
 
+import { recordAuditEvent } from "@/lib/audit/log";
 import { requireSessionProfile } from "@/lib/auth/profile";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import {
@@ -38,12 +39,14 @@ export async function createActionPlanAction(formData: FormData) {
   }
 
   const supabase = await createSupabaseServerClient();
+  const mutation = {
+    ...buildActionPlanMutation(parsed.data, profile.id),
+    created_by: profile.id,
+  };
+
   const { data, error } = await supabase
     .from("action_plans")
-    .insert({
-      ...buildActionPlanMutation(parsed.data, profile.id),
-      created_by: profile.id,
-    })
+    .insert(mutation)
     .select("id")
     .single<{ id: string }>();
 
@@ -52,6 +55,20 @@ export async function createActionPlanAction(formData: FormData) {
       `/dashboard/actions/new?error=${encodeMessage(error?.message ?? "Could not create action plan")}`,
     );
   }
+
+  await recordAuditEvent({
+    entityType: "action_plan",
+    entityId: data.id,
+    action: "create",
+    actorProfileId: profile.id,
+    summary: {
+      status: mutation.status,
+      priority: mutation.priority,
+      target_date: mutation.target_date,
+      risk_id: mutation.risk_id,
+      control_id: mutation.control_id,
+    },
+  }).catch(() => undefined);
 
   redirect(`/dashboard/actions/${data.id}`);
 }
@@ -72,16 +89,31 @@ export async function updateActionPlanAction(formData: FormData) {
     );
   }
 
+  const mutation = buildActionPlanMutation(parsed.data, profile.id);
   const supabase = await createSupabaseServerClient();
   const { error } = await supabase
     .from("action_plans")
-    .update(buildActionPlanMutation(parsed.data, profile.id))
+    .update(mutation)
     .eq("id", actionPlanIdResult.data)
     .is("deleted_at", null);
 
   if (error) {
     redirect(`/dashboard/actions/${actionPlanIdResult.data}/edit?error=${encodeMessage(error.message)}`);
   }
+
+  await recordAuditEvent({
+    entityType: "action_plan",
+    entityId: actionPlanIdResult.data,
+    action: "update",
+    actorProfileId: profile.id,
+    summary: {
+      status: mutation.status,
+      priority: mutation.priority,
+      target_date: mutation.target_date,
+      risk_id: mutation.risk_id,
+      control_id: mutation.control_id,
+    },
+  }).catch(() => undefined);
 
   redirect(`/dashboard/actions/${actionPlanIdResult.data}`);
 }
@@ -94,11 +126,12 @@ export async function archiveActionPlanAction(formData: FormData) {
     redirect("/dashboard/actions?error=invalid_id");
   }
 
+  const deletedAt = new Date().toISOString();
   const supabase = await createSupabaseServerClient();
   const { error } = await supabase
     .from("action_plans")
     .update({
-      deleted_at: new Date().toISOString(),
+      deleted_at: deletedAt,
       updated_by: profile.id,
     })
     .eq("id", actionPlanIdResult.data)
@@ -107,6 +140,14 @@ export async function archiveActionPlanAction(formData: FormData) {
   if (error) {
     redirect(`/dashboard/actions/${actionPlanIdResult.data}?error=${encodeMessage(error.message)}`);
   }
+
+  await recordAuditEvent({
+    entityType: "action_plan",
+    entityId: actionPlanIdResult.data,
+    action: "soft_delete",
+    actorProfileId: profile.id,
+    summary: { deleted_at: deletedAt },
+  }).catch(() => undefined);
 
   redirect("/dashboard/actions");
 }

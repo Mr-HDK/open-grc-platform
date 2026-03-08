@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation";
 
+import { recordAuditEvent } from "@/lib/audit/log";
 import { requireSessionProfile } from "@/lib/auth/profile";
 import { buildRiskMutation, riskFormSchema, riskIdSchema } from "@/lib/validators/risk";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -31,18 +32,29 @@ export async function createRiskAction(formData: FormData) {
   }
 
   const supabase = await createSupabaseServerClient();
-  const { data, error } = await supabase
-    .from("risks")
-    .insert({
-      ...buildRiskMutation(parsed.data, profile.id),
-      created_by: profile.id,
-    })
-    .select("id")
-    .single<{ id: string }>();
+  const mutation = {
+    ...buildRiskMutation(parsed.data, profile.id),
+    created_by: profile.id,
+  };
+
+  const { data, error } = await supabase.from("risks").insert(mutation).select("id").single<{ id: string }>();
 
   if (error || !data) {
     redirect(`/dashboard/risks/new?error=${encodeMessage(error?.message ?? "Could not create risk")}`);
   }
+
+  await recordAuditEvent({
+    entityType: "risk",
+    entityId: data.id,
+    action: "create",
+    actorProfileId: profile.id,
+    summary: {
+      title: mutation.title,
+      status: mutation.status,
+      score: mutation.score,
+      level: mutation.level,
+    },
+  }).catch(() => undefined);
 
   redirect(`/dashboard/risks/${data.id}`);
 }
@@ -61,16 +73,30 @@ export async function updateRiskAction(formData: FormData) {
     redirect(`/dashboard/risks/${riskIdResult.data}/edit?error=${encodeMessage(parsed.error.issues[0]?.message ?? "Invalid risk payload")}`);
   }
 
+  const mutation = buildRiskMutation(parsed.data, profile.id);
   const supabase = await createSupabaseServerClient();
   const { error } = await supabase
     .from("risks")
-    .update(buildRiskMutation(parsed.data, profile.id))
+    .update(mutation)
     .eq("id", riskIdResult.data)
     .is("deleted_at", null);
 
   if (error) {
     redirect(`/dashboard/risks/${riskIdResult.data}/edit?error=${encodeMessage(error.message)}`);
   }
+
+  await recordAuditEvent({
+    entityType: "risk",
+    entityId: riskIdResult.data,
+    action: "update",
+    actorProfileId: profile.id,
+    summary: {
+      status: mutation.status,
+      score: mutation.score,
+      level: mutation.level,
+      due_date: mutation.due_date,
+    },
+  }).catch(() => undefined);
 
   redirect(`/dashboard/risks/${riskIdResult.data}`);
 }
@@ -83,11 +109,12 @@ export async function archiveRiskAction(formData: FormData) {
     redirect("/dashboard/risks?error=invalid_id");
   }
 
+  const deletedAt = new Date().toISOString();
   const supabase = await createSupabaseServerClient();
   const { error } = await supabase
     .from("risks")
     .update({
-      deleted_at: new Date().toISOString(),
+      deleted_at: deletedAt,
       updated_by: profile.id,
     })
     .eq("id", riskIdResult.data)
@@ -96,6 +123,14 @@ export async function archiveRiskAction(formData: FormData) {
   if (error) {
     redirect(`/dashboard/risks/${riskIdResult.data}?error=${encodeMessage(error.message)}`);
   }
+
+  await recordAuditEvent({
+    entityType: "risk",
+    entityId: riskIdResult.data,
+    action: "soft_delete",
+    actorProfileId: profile.id,
+    summary: { deleted_at: deletedAt },
+  }).catch(() => undefined);
 
   redirect("/dashboard/risks");
 }

@@ -2,8 +2,10 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { archiveActionPlanAction } from "@/app/dashboard/actions/actions";
+import { AuditLogSection } from "@/components/audit/audit-log-section";
 import { buttonVariants } from "@/components/ui/button";
 import { EvidenceListSection } from "@/components/evidence/evidence-list-section";
+import { getAuditEntries } from "@/lib/audit/log";
 import { requireSessionProfile } from "@/lib/auth/profile";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { isOverdueAction } from "@/lib/validators/action-plan";
@@ -124,11 +126,12 @@ export default async function ActionPlanDetailPage({
     notFound();
   }
 
-  const [risk, control, owner, evidence] = await Promise.all([
+  const [risk, control, owner, evidence, auditEntries] = await Promise.all([
     getRisk(actionPlan.risk_id),
     getControl(actionPlan.control_id),
     getOwner(actionPlan.owner_profile_id),
     getActionPlanEvidence(actionPlan.id),
+    getAuditEntries("action_plan", actionPlan.id),
   ]);
 
   const overdue = isOverdueAction(actionPlan.target_date, actionPlan.status);
@@ -206,6 +209,8 @@ export default async function ActionPlanDetailPage({
         items={evidence}
         createHref={`/dashboard/evidence/new?actionPlanId=${actionPlan.id}`}
       />
+
+      <AuditLogSection items={auditEntries} />
     </div>
   );
 }

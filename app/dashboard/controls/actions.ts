@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation";
 
+import { recordAuditEvent } from "@/lib/audit/log";
 import { requireSessionProfile } from "@/lib/auth/profile";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import {
@@ -78,12 +79,14 @@ export async function createControlAction(formData: FormData) {
   }
 
   const supabase = await createSupabaseServerClient();
+  const mutation = {
+    ...buildControlMutation(parsed.data, profile.id),
+    created_by: profile.id,
+  };
+
   const { data, error } = await supabase
     .from("controls")
-    .insert({
-      ...buildControlMutation(parsed.data, profile.id),
-      created_by: profile.id,
-    })
+    .insert(mutation)
     .select("id")
     .single<{ id: string }>();
 
@@ -98,6 +101,19 @@ export async function createControlAction(formData: FormData) {
   if (linkError) {
     redirect(`/dashboard/controls/${data.id}?error=${encodeMessage(linkError)}`);
   }
+
+  await recordAuditEvent({
+    entityType: "control",
+    entityId: data.id,
+    action: "create",
+    actorProfileId: profile.id,
+    summary: {
+      code: mutation.code,
+      effectiveness_status: mutation.effectiveness_status,
+      review_frequency: mutation.review_frequency,
+      linked_risks: riskLinks.data.length,
+    },
+  }).catch(() => undefined);
 
   redirect(`/dashboard/controls/${data.id}`);
 }
@@ -126,10 +142,11 @@ export async function updateControlAction(formData: FormData) {
     );
   }
 
+  const mutation = buildControlMutation(parsed.data, profile.id);
   const supabase = await createSupabaseServerClient();
   const { error } = await supabase
     .from("controls")
-    .update(buildControlMutation(parsed.data, profile.id))
+    .update(mutation)
     .eq("id", controlIdResult.data)
     .is("deleted_at", null);
 
@@ -145,6 +162,19 @@ export async function updateControlAction(formData: FormData) {
     redirect(`/dashboard/controls/${controlIdResult.data}?error=${encodeMessage(linkError)}`);
   }
 
+  await recordAuditEvent({
+    entityType: "control",
+    entityId: controlIdResult.data,
+    action: "update",
+    actorProfileId: profile.id,
+    summary: {
+      effectiveness_status: mutation.effectiveness_status,
+      review_frequency: mutation.review_frequency,
+      next_review_date: mutation.next_review_date,
+      linked_risks: riskLinks.data.length,
+    },
+  }).catch(() => undefined);
+
   redirect(`/dashboard/controls/${controlIdResult.data}`);
 }
 
@@ -157,11 +187,12 @@ export async function archiveControlAction(formData: FormData) {
     redirect("/dashboard/controls?error=invalid_id");
   }
 
+  const deletedAt = new Date().toISOString();
   const supabase = await createSupabaseServerClient();
   const { error } = await supabase
     .from("controls")
     .update({
-      deleted_at: new Date().toISOString(),
+      deleted_at: deletedAt,
       updated_by: profile.id,
     })
     .eq("id", controlIdResult.data)
@@ -170,6 +201,14 @@ export async function archiveControlAction(formData: FormData) {
   if (error) {
     redirect(`/dashboard/controls/${controlIdResult.data}?error=${encodeMessage(error.message)}`);
   }
+
+  await recordAuditEvent({
+    entityType: "control",
+    entityId: controlIdResult.data,
+    action: "soft_delete",
+    actorProfileId: profile.id,
+    summary: { deleted_at: deletedAt },
+  }).catch(() => undefined);
 
   redirect("/dashboard/controls");
 }
