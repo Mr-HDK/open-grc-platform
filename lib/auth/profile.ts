@@ -4,7 +4,7 @@ import { getSessionUser } from "@/lib/auth/session";
 import { hasRole, isRole, type Role } from "@/lib/permissions/roles";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
-const PROFILE_COLUMNS = "id, email, full_name, role, organization_id";
+const PROFILE_COLUMNS = "id, email, full_name, role, organization_id, status";
 
 export type SessionProfile = {
   id: string;
@@ -20,6 +20,7 @@ type ProfileRow = {
   full_name: string | null;
   organization_id: string | null;
   role: string;
+  status?: string | null;
 };
 
 function normalizeProfile(row: ProfileRow): SessionProfile {
@@ -63,6 +64,10 @@ async function ensureProfileFromUser() {
 
   if (!data) {
     return null;
+  }
+
+  if (data.status === "invited") {
+    await supabase.from("profiles").update({ status: "active" }).eq("id", user.id);
   }
 
   if (data.organization_id) {

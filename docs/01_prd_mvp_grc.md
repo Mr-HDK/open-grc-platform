@@ -61,6 +61,7 @@ La base actuelle couvre:
 - mapping de frameworks
 - dashboard resume
 - audit log minimal
+- admin settings (roles, invite, deactivate, transfer ownership)
 
 ## 6. Phase actuelle
 

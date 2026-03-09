@@ -67,6 +67,7 @@ Phase 1 foundation is implemented. This repository is no longer managed as a gre
   - admin-only settings route
   - organization-scoped profile list
   - role reassignment flow with server-side validation
+  - invite, deactivate, and ownership transfer flows
 - SQL migrations and seed data
 - Playwright E2E smoke test + optional risk/control/action/evidence/framework/libraries/settings tests
 

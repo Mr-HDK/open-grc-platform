@@ -1,7 +1,8 @@
 import { createServerClient, type SetAllCookies } from "@supabase/ssr";
+import { createClient } from "@supabase/supabase-js";
 import { cookies } from "next/headers";
 
-import { getSupabaseEnv } from "@/lib/supabase/env";
+import { getSupabaseEnv, getSupabaseServiceRoleEnv } from "@/lib/supabase/env";
 
 export async function createSupabaseServerClient() {
   const { supabaseUrl, supabaseAnonKey } = getSupabaseEnv();
@@ -21,6 +22,17 @@ export async function createSupabaseServerClient() {
           // Ignore in Server Components where cookies are read-only.
         }
       },
+    },
+  });
+}
+
+export function createSupabaseAdminClient() {
+  const { supabaseUrl, supabaseServiceRoleKey } = getSupabaseServiceRoleEnv();
+
+  return createClient(supabaseUrl, supabaseServiceRoleKey, {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false,
     },
   });
 }
