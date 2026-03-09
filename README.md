@@ -48,6 +48,11 @@ Phase 1 foundation is implemented. This repository is no longer managed as a gre
   - seed for COBIT, ISO 27001, NIST CSF, NIS2
   - admin mapping UI for assigning multiple requirements to a control
   - mappings displayed on control detail page
+- Libraries module:
+  - admin-only reusable bundle catalog
+  - bundle application flow for risk/control template sets
+  - idempotent import behavior (skips existing records by key fields)
+  - starter bundles for SaaS baseline and ISO 27001 controls
 - Dashboard module:
   - KPI cards
   - risks by status and level
@@ -58,8 +63,12 @@ Phase 1 foundation is implemented. This repository is no longer managed as a gre
   - `audit_log` table
   - create/update/soft-delete tracking for risks, controls, and action plans
   - audit history displayed on risk/control/action detail pages
+- Admin Settings module:
+  - admin-only settings route
+  - organization-scoped profile list
+  - role reassignment flow with server-side validation
 - SQL migrations and seed data
-- Playwright E2E smoke test + optional risk/control/action/evidence/framework tests
+- Playwright E2E smoke test + optional risk/control/action/evidence/framework/libraries/settings tests
 
 ## Current direction
 
@@ -89,6 +98,8 @@ app/
     actions/
     evidence/
     frameworks/
+    libraries/
+    settings/
 components/
   audit/
   layout/
@@ -100,6 +111,7 @@ components/
 lib/
   audit/
   auth/
+  libraries/
   permissions/
   scoring/
   supabase/
@@ -205,7 +217,7 @@ The workflow runs:
   - `viewer`: read-only access to dashboard modules
   - `contributor`: can create and edit records
   - `manager`: can archive records
-  - `admin`: can manage framework mappings
+  - `admin`: can manage framework mappings and user role reassignment
 - Server-side validation now enforces:
   - strict UUID/date format checks on linked fields
   - linked-record existence checks before write operations
@@ -221,16 +233,18 @@ The workflow runs:
 
 ## Notes
 
-- `tests/e2e/risks.create.spec.ts`, `tests/e2e/controls.create.spec.ts`, `tests/e2e/actions.create.spec.ts`, `tests/e2e/evidence.create.spec.ts`, and `tests/e2e/frameworks.mapping.spec.ts` skip automatically if required credentials are not set.
+- `tests/e2e/risks.create.spec.ts`, `tests/e2e/controls.create.spec.ts`, `tests/e2e/actions.create.spec.ts`, `tests/e2e/evidence.create.spec.ts`, `tests/e2e/frameworks.mapping.spec.ts`, `tests/e2e/libraries.bundles.spec.ts`, and `tests/e2e/settings.roles.spec.ts` skip automatically if required credentials are not set.
 - `frameworks.mapping.spec.ts` requires admin credentials and at least one seeded control + framework requirement.
 - Framework mappings page is admin-only by design.
+- Libraries page is admin-only by design.
+- Settings page is admin-only by design.
 
 ## Next-phase roadmap
 
 - Add dedicated E2E coverage for audit log history entries.
 - Add optimistic UI feedback for form submissions (pending/success state).
-- Add an admin settings page for role reassignment and user lifecycle.
-- Add starter libraries and import flows for reusable risk and control bundles.
+- Expand admin settings with invite, deactivate, and controlled ownership transfer flows.
+- Expand library coverage and add import flows for custom risk/control bundles.
 - Add export/reporting flows for audit packs and management reporting.
 - Add lightweight collaboration features such as comments and reminders.
 - Evaluate selective new modules only after the above items are stable.

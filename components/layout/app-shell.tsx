@@ -28,6 +28,7 @@ export function AppShell({ userEmail, userRole, children }: AppShellProps) {
 
   if (userRole === "admin") {
     navLinks.push({ href: "/dashboard/frameworks", label: "Frameworks" });
+    navLinks.push({ href: "/dashboard/libraries", label: "Libraries" });
     navLinks.push({ href: "/dashboard/settings", label: "Settings" });
   }
 
