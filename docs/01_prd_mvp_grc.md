@@ -62,6 +62,7 @@ La base actuelle couvre:
 - dashboard resume
 - audit log minimal
 - admin settings (roles, invite, deactivate, transfer ownership)
+- imports/exports simples (risques/controles)
 
 ## 6. Phase actuelle
 

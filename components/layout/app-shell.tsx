@@ -32,6 +32,10 @@ export function AppShell({ userEmail, userRole, children }: AppShellProps) {
     navLinks.push({ href: "/dashboard/settings", label: "Settings" });
   }
 
+  if (userRole === "admin" || userRole === "manager") {
+    navLinks.push({ href: "/dashboard/reporting", label: "Reporting" });
+  }
+
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,_rgba(15,23,42,0.04),_transparent_45%)]">
       <div className="mx-auto grid min-h-screen w-full max-w-7xl grid-cols-1 lg:grid-cols-[240px_1fr]">
