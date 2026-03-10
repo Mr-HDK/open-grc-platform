@@ -80,6 +80,9 @@ Phase 1 foundation is implemented. This repository is no longer managed as a gre
 - Incident Register module:
   - incident CRUD with status tracking
   - optional links to risks and action plans
+- Control Reviews module:
+  - scheduled review tracking for controls
+  - status, target date, and completion tracking
 - SQL migrations and seed data
 - Playwright E2E smoke test + optional risk/control/action/evidence/framework/libraries/settings tests
 

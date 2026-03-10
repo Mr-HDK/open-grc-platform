@@ -3,11 +3,11 @@ import { notFound } from "next/navigation";
 
 import { archiveControlAction } from "@/app/dashboard/controls/actions";
 import { AuditLogSection } from "@/components/audit/audit-log-section";
+import { buttonVariants } from "@/components/ui/button";
 import { CommentsSection, type CommentItem } from "@/components/comments/comments-section";
 import { LinkedRisksSection } from "@/components/controls/linked-risks-section";
 import { ControlFrameworkMappingsSection } from "@/components/frameworks/control-framework-mappings-section";
 import { FeedbackAlert } from "@/components/ui/feedback-alert";
-import { buttonVariants } from "@/components/ui/button";
 import { EvidenceListSection } from "@/components/evidence/evidence-list-section";
 import { getAuditEntries } from "@/lib/audit/log";
 import { requireSessionProfile } from "@/lib/auth/profile";
@@ -81,6 +81,13 @@ type CommentRow = {
     email: string;
     full_name: string | null;
   } | null;
+};
+
+type ControlReviewRow = {
+  id: string;
+  status: string;
+  target_date: string;
+  completed_at: string | null;
 };
 
 async function getControlById(controlId: string) {
@@ -219,6 +226,19 @@ async function getControlComments(controlId: string) {
   }));
 }
 
+async function getControlReviews(controlId: string) {
+  const supabase = await createSupabaseServerClient();
+  const { data } = await supabase
+    .from("control_reviews")
+    .select("id, status, target_date, completed_at")
+    .eq("control_id", controlId)
+    .is("deleted_at", null)
+    .order("target_date", { ascending: true })
+    .returns<ControlReviewRow[]>();
+
+  return data ?? [];
+}
+
 export default async function ControlDetailPage({
   params,
   searchParams,
@@ -239,13 +259,14 @@ export default async function ControlDetailPage({
     notFound();
   }
 
-  const [owner, linkedRisks, evidence, frameworkMappings, auditEntries, comments] = await Promise.all([
+  const [owner, linkedRisks, evidence, frameworkMappings, auditEntries, comments, reviews] = await Promise.all([
     getOwner(control.owner_profile_id),
     getLinkedRisks(control.id),
     getControlEvidence(control.id),
     getFrameworkMappings(control.id),
     getAuditEntries("control", control.id),
     getControlComments(control.id),
+    getControlReviews(control.id),
   ]);
   const evidenceDownloadUrls = await getEvidenceSignedUrlById(evidence);
 
@@ -324,6 +345,43 @@ export default async function ControlDetailPage({
       <LinkedRisksSection items={linkedRisks} />
 
       <ControlFrameworkMappingsSection items={frameworkMappings} />
+
+      <section className="rounded-xl border bg-card p-6">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h2 className="text-lg font-semibold tracking-tight">Control reviews</h2>
+          {canEdit ? (
+            <Link
+              href={`/dashboard/control-reviews/new?controlId=${control.id}`}
+              className={buttonVariants({ variant: "outline" })}
+            >
+              Schedule review
+            </Link>
+          ) : null}
+        </div>
+
+        {reviews.length === 0 ? (
+          <p className="mt-3 text-sm text-muted-foreground">No reviews scheduled yet.</p>
+        ) : (
+          <ul className="mt-4 space-y-3">
+            {reviews.map((review) => (
+              <li key={review.id} className="rounded-lg border p-3">
+                <Link
+                  href={`/dashboard/control-reviews/${review.id}`}
+                  className="text-sm font-medium hover:underline"
+                >
+                  {review.status} review
+                </Link>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  target {review.target_date} |{" "}
+                  {review.completed_at
+                    ? `completed ${new Date(review.completed_at).toLocaleDateString()}`
+                    : "pending"}
+                </p>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
 
       <EvidenceListSection
         title="Evidence"

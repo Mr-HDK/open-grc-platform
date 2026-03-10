@@ -66,6 +66,7 @@ La base actuelle couvre:
 - collaboration legere (commentaires, activity trail)
 - notifications utiles (actions en retard, controles a revoir)
 - registre incidents (statuts simples, liens vers risques/actions)
+- revues periodiques des controles (statut + date cible)
 
 ## 6. Phase actuelle
 
