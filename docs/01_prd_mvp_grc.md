@@ -64,6 +64,7 @@ La base actuelle couvre:
 - admin settings (roles, invite, deactivate, transfer ownership)
 - imports/exports simples (risques/controles)
 - collaboration legere (commentaires, activity trail)
+- notifications utiles (actions en retard, controles a revoir)
 
 ## 6. Phase actuelle
 

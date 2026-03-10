@@ -34,6 +34,7 @@ export function AppShell({ userEmail, userRole, children }: AppShellProps) {
 
   if (userRole === "admin" || userRole === "manager") {
     navLinks.push({ href: "/dashboard/reporting", label: "Reporting" });
+    navLinks.push({ href: "/dashboard/notifications", label: "Notifications" });
   }
 
   return (
