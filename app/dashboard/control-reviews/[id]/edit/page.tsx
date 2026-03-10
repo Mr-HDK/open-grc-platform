@@ -49,7 +49,7 @@ export default async function EditControlReviewPage({
   const query = await searchParams;
 
   const supabase = await createSupabaseServerClient();
-  const [{ data: review }, { data: controls }, { data: reviewers }] = await Promise.all([
+  const [review, controlsResult, reviewersResult] = await Promise.all([
     getControlReview(id, profile.organizationId),
     supabase
       .from("controls")
@@ -66,6 +66,8 @@ export default async function EditControlReviewPage({
       .order("email")
       .returns<OptionRow[]>(),
   ]);
+  const controls = controlsResult.data;
+  const reviewers = reviewersResult.data;
 
   if (!review) {
     notFound();

@@ -24,7 +24,7 @@ type IncidentRow = {
   owner_profile_id: string | null;
 };
 
-async function getIncident(incidentId: string) {
+async function getIncident(incidentId: string, organizationId: string) {
   const supabase = await createSupabaseServerClient();
   const { data } = await supabase
     .from("incidents")
@@ -32,6 +32,7 @@ async function getIncident(incidentId: string) {
       "id, title, description, status, occurred_at, risk_id, action_plan_id, owner_profile_id",
     )
     .eq("id", incidentId)
+    .eq("organization_id", organizationId)
     .is("deleted_at", null)
     .maybeSingle<IncidentRow>();
 
@@ -45,30 +46,39 @@ export default async function EditIncidentPage({
   params: Promise<{ id: string }>;
   searchParams: Promise<{ error?: string }>;
 }) {
-  await requireSessionProfile("contributor");
+  const profile = await requireSessionProfile("contributor");
   const { id } = await params;
   const query = await searchParams;
 
   const supabase = await createSupabaseServerClient();
-  const [{ data: incident }, { data: risks }, { data: actionPlans }, { data: owners }] =
-    await Promise.all([
-      getIncident(id),
-      supabase
-        .from("risks")
-        .select("id, title")
-        .is("deleted_at", null)
-        .order("updated_at", { ascending: false })
-        .limit(50)
-        .returns<OptionRow[]>(),
-      supabase
-        .from("action_plans")
-        .select("id, title")
-        .is("deleted_at", null)
-        .order("updated_at", { ascending: false })
-        .limit(50)
-        .returns<OptionRow[]>(),
-      supabase.from("profiles").select("id, email, full_name").order("email").returns<OptionRow[]>(),
-    ]);
+  const [incident, risksResult, actionPlansResult, ownersResult] = await Promise.all([
+    getIncident(id, profile.organizationId),
+    supabase
+      .from("risks")
+      .select("id, title")
+      .eq("organization_id", profile.organizationId)
+      .is("deleted_at", null)
+      .order("updated_at", { ascending: false })
+      .limit(50)
+      .returns<OptionRow[]>(),
+    supabase
+      .from("action_plans")
+      .select("id, title")
+      .eq("organization_id", profile.organizationId)
+      .is("deleted_at", null)
+      .order("updated_at", { ascending: false })
+      .limit(50)
+      .returns<OptionRow[]>(),
+    supabase
+      .from("profiles")
+      .select("id, email, full_name")
+      .eq("organization_id", profile.organizationId)
+      .order("email")
+      .returns<OptionRow[]>(),
+  ]);
+  const risks = risksResult.data;
+  const actionPlans = actionPlansResult.data;
+  const owners = ownersResult.data;
 
   if (!incident) {
     notFound();
