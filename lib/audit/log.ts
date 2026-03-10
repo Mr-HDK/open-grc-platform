@@ -1,6 +1,6 @@
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
-export type AuditEntityType = "risk" | "control" | "action_plan";
+export type AuditEntityType = "risk" | "control" | "action_plan" | "incident";
 export type AuditAction = "create" | "update" | "soft_delete";
 
 export type AuditEntry = {

@@ -65,6 +65,7 @@ La base actuelle couvre:
 - imports/exports simples (risques/controles)
 - collaboration legere (commentaires, activity trail)
 - notifications utiles (actions en retard, controles a revoir)
+- registre incidents (statuts simples, liens vers risques/actions)
 
 ## 6. Phase actuelle
 
