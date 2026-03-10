@@ -11,6 +11,7 @@ type AppShellProps = {
 const baseNavLinks = [
   { href: "/dashboard", label: "Dashboard" },
   { href: "/dashboard/risks", label: "Risks" },
+  { href: "/dashboard/risk-acceptances", label: "Risk acceptances" },
   { href: "/dashboard/controls", label: "Controls" },
   { href: "/dashboard/control-reviews", label: "Control reviews" },
   { href: "/dashboard/control-tests", label: "Control tests" },

@@ -7,7 +7,8 @@ export type AuditEntityType =
   | "incident"
   | "control_review"
   | "control_test"
-  | "finding";
+  | "finding"
+  | "risk_acceptance";
 export type AuditAction = "create" | "update" | "soft_delete";
 
 export type AuditEntry = {

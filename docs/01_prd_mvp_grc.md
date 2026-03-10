@@ -68,6 +68,7 @@ La base actuelle couvre:
 - registre incidents (statuts simples, liens vers risques/actions)
 - revues periodiques des controles (statut + date cible)
 - campagnes de test des controles + constats (findings)
+- acceptations de risque (justification, approbateur, expiration, revocation)
 
 ## 6. Phase actuelle
 

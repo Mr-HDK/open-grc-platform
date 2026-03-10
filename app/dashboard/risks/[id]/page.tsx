@@ -73,6 +73,12 @@ type CommentRow = {
   } | null;
 };
 
+type RiskAcceptanceRow = {
+  id: string;
+  expiration_date: string;
+  status: "active" | "expired" | "revoked";
+};
+
 async function getRiskById(riskId: string) {
   const supabase = await createSupabaseServerClient();
   const { data } = await supabase
@@ -169,6 +175,20 @@ async function getRiskComments(riskId: string) {
   }));
 }
 
+async function getRiskAcceptances(riskId: string) {
+  const supabase = await createSupabaseServerClient();
+  const { data } = await supabase
+    .from("risk_acceptances")
+    .select("id, expiration_date, status")
+    .eq("risk_id", riskId)
+    .is("deleted_at", null)
+    .order("expiration_date", { ascending: true })
+    .limit(5)
+    .returns<RiskAcceptanceRow[]>();
+
+  return data ?? [];
+}
+
 export default async function RiskDetailPage({
   params,
   searchParams,
@@ -179,6 +199,7 @@ export default async function RiskDetailPage({
   const profile = await requireSessionProfile("viewer");
   const canEdit = hasRole("contributor", profile.role);
   const canArchive = hasRole("manager", profile.role);
+  const canManageAcceptances = hasRole("manager", profile.role);
 
   const { id } = await params;
   const query = await searchParams;
@@ -188,13 +209,14 @@ export default async function RiskDetailPage({
     notFound();
   }
 
-  const [owner, linkedControls, linkedActionPlans, evidence, auditEntries, comments] = await Promise.all([
+  const [owner, linkedControls, linkedActionPlans, evidence, auditEntries, comments, riskAcceptances] = await Promise.all([
     getOwner(risk.owner_profile_id),
     getLinkedControls(risk.id),
     getLinkedActionPlans(risk.id),
     getRiskEvidence(risk.id),
     getAuditEntries("risk", risk.id),
     getRiskComments(risk.id),
+    getRiskAcceptances(risk.id),
   ]);
   const evidenceDownloadUrls = await getEvidenceSignedUrlById(evidence);
 
@@ -275,6 +297,40 @@ export default async function RiskDetailPage({
           <p className="mt-1 text-sm font-medium">{new Date(risk.updated_at).toLocaleString()}</p>
         </div>
       </div>
+
+      <section className="rounded-xl border bg-card p-6">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h2 className="text-lg font-semibold tracking-tight">Risk acceptances</h2>
+          {canManageAcceptances ? (
+            <Link
+              href={`/dashboard/risk-acceptances/new?riskId=${risk.id}`}
+              className={buttonVariants({ variant: "outline" })}
+            >
+              New acceptance
+            </Link>
+          ) : null}
+        </div>
+
+        {riskAcceptances.length === 0 ? (
+          <p className="mt-3 text-sm text-muted-foreground">No risk acceptances linked to this risk.</p>
+        ) : (
+          <ul className="mt-4 space-y-3">
+            {riskAcceptances.map((acceptance) => (
+              <li key={acceptance.id} className="rounded-lg border p-3">
+                <Link
+                  href={`/dashboard/risk-acceptances/${acceptance.id}`}
+                  className="text-sm font-medium hover:underline"
+                >
+                  {acceptance.status} acceptance
+                </Link>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  expires {acceptance.expiration_date}
+                </p>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
 
       <section className="rounded-xl border bg-card p-6">
         <h2 className="text-lg font-semibold tracking-tight">Linked controls</h2>

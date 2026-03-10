@@ -88,6 +88,11 @@ Phase 1 foundation is implemented. This repository is no longer managed as a gre
   - automatic finding creation on failed tests
   - findings register with severity, remediation, owner, and due date
   - retest flow to close findings when tests pass
+- Risk Acceptances module:
+  - manager/admin approval records with mandatory justification
+  - optional links to risk control/action scope
+  - status lifecycle: active, expired, revoked
+  - expiration reminders and revocation flow
 - SQL migrations and seed data
 - Playwright E2E smoke test + optional risk/control/action/evidence/framework/libraries/settings tests
 
@@ -275,6 +280,7 @@ The workflow runs:
 
 - `tests/e2e/risks.create.spec.ts`, `tests/e2e/controls.create.spec.ts`, `tests/e2e/actions.create.spec.ts`, `tests/e2e/evidence.create.spec.ts`, `tests/e2e/frameworks.mapping.spec.ts`, `tests/e2e/libraries.bundles.spec.ts`, and `tests/e2e/settings.roles.spec.ts` skip automatically if required credentials are not set.
 - `tests/e2e/control-tests.findings.spec.ts` validates failed control test -> finding creation -> retest closure.
+- `tests/e2e/risk-acceptances.lifecycle.spec.ts` validates manager create + revoke lifecycle.
 - `frameworks.mapping.spec.ts` requires admin credentials and at least one seeded control + framework requirement.
 - Framework mappings page is admin-only by design.
 - Libraries page is admin-only by design.
