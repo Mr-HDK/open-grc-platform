@@ -41,10 +41,10 @@ function readProjectEnv() {
     ...loadEnvFile(path.join(cwd, ".env.local")),
   };
 
-  // In CI, secrets are injected via process.env and no .env.local file exists.
+  // Prefer project env files locally, while still allowing CI-only injected secrets.
   return {
-    ...fileEnv,
     ...process.env,
+    ...fileEnv,
   };
 }
 

@@ -157,3 +157,134 @@ Attendus:
 
 Ne change pas l'architecture globale.
 ```
+
+---
+
+## Prompt 19 - Control Testing + Findings
+
+```text
+Lis les docs du projet puis implemente uniquement un module de test des controles et de gestion des constats.
+
+Attendus:
+- table control_tests pour tracer les campagnes de test (periode, testeur, resultat, notes)
+- lien obligatoire avec un controle existant
+- creation automatique ou guidee d'un finding quand un test echoue
+- module findings minimal (statut, severite, root cause, remediation, due date, owner)
+- retest simple pour cloturer un finding
+- UI minimale lisible pour managers et contributeurs
+- validations serveur strictes + permissions coherentes
+- tests minimaux
+- README mis a jour
+
+Contraintes:
+- reste simple, pas de moteur de workflow complexe
+- ne change pas l'architecture globale
+```
+
+---
+
+## Prompt 20 - Risk Acceptance & Exceptions
+
+```text
+Lis les docs du projet puis implemente uniquement la gestion des acceptations de risque et exceptions.
+
+Attendus:
+- entite risk_acceptances ou equivalent avec justification, approbateur, date d'expiration
+- lien vers risque existant (et controle/action optionnels si utile)
+- statuts de base (active, expired, revoked)
+- rappel visuel clair quand une acceptance arrive a expiration
+- garde-fous serveur sur les transitions et permissions (manager/admin)
+- validations strictes (motif obligatoire, dates valides)
+- tests minimaux
+- README mis a jour
+
+Contraintes:
+- pas de workflow d'approbation generique configurable
+- reste pragmatique
+```
+
+---
+
+## Prompt 21 - Compliance Assessments at Requirement Level
+
+```text
+Lis les docs du projet puis implemente uniquement l'evaluation de conformite au niveau des exigences framework.
+
+Attendus:
+- evaluation requirement-level (compliant, partial, gap, not_applicable)
+- justification obligatoire pour partial/gap/not_applicable
+- possibilite de lier des preuves existantes a chaque evaluation
+- vue consolidée par framework (taux de couverture, taux de gap)
+- permissions coherentes avec roles existants
+- validations serveur strictes
+- tests minimaux
+- README mis a jour
+
+Contraintes:
+- pas de moteur d'audit complet
+- ne pas modifier l'architecture de base
+```
+
+---
+
+## Prompt 22 - Asset Register + Risk/Control Linking
+
+```text
+Lis les docs du projet puis implemente uniquement un registre d'actifs simple relie aux risques et controles.
+
+Attendus:
+- entite assets (nom, type, criticite, owner, statut)
+- liens n-n assets<->risks et assets<->controls
+- filtres utiles dans les listes (type, criticite, owner)
+- affichage des actifs lies sur les fiches risque/controle
+- validations serveur strictes + permissions coherentes
+- tests minimaux
+- README mis a jour
+
+Contraintes:
+- pas de CMDB complexe
+- reste minimal mais propre
+```
+
+---
+
+## Prompt 23 - Third-Party Risk Lite
+
+```text
+Lis les docs du projet puis implemente uniquement une version legere de gestion du risque tiers.
+
+Attendus:
+- registre fournisseurs (nom, service, criticite, owner)
+- evaluation simple de risque tiers (statut, score simple, prochaine revue)
+- lien possible vers risques/controles/actions existants
+- suivi des revues periodiques fournisseurs
+- validations serveur strictes + permissions
+- tests minimaux
+- README mis a jour
+
+Contraintes:
+- pas de questionnaire fournisseur complexe
+- pas d'integration externe obligatoire
+```
+
+---
+
+## Prompt 24 - Policy & Attestation
+
+```text
+Lis les docs du projet puis implemente uniquement la gestion de policies et attestations.
+
+Attendus:
+- registre de policies (titre, version, statut, date d'effet, owner)
+- publication simple d'une version active
+- attestation utilisateur minimale (acknowledged_at)
+- suivi de couverture des attestations (qui a confirme / qui manque)
+- permissions coherentes (admin/manager)
+- validations serveur strictes
+- tests minimaux
+- README mis a jour
+
+Contraintes:
+- pas de moteur documentaire avance
+- pas de signature electronique complexe
+```

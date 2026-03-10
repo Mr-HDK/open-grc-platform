@@ -13,6 +13,8 @@ const baseNavLinks = [
   { href: "/dashboard/risks", label: "Risks" },
   { href: "/dashboard/controls", label: "Controls" },
   { href: "/dashboard/control-reviews", label: "Control reviews" },
+  { href: "/dashboard/control-tests", label: "Control tests" },
+  { href: "/dashboard/findings", label: "Findings" },
   { href: "/dashboard/actions", label: "Actions" },
   { href: "/dashboard/incidents", label: "Incidents" },
   { href: "/dashboard/evidence", label: "Evidence" },

@@ -83,6 +83,11 @@ Phase 1 foundation is implemented. This repository is no longer managed as a gre
 - Control Reviews module:
   - scheduled review tracking for controls
   - status, target date, and completion tracking
+- Control Testing & Findings module:
+  - control test campaigns with period, tester, and result
+  - automatic finding creation on failed tests
+  - findings register with severity, remediation, owner, and due date
+  - retest flow to close findings when tests pass
 - SQL migrations and seed data
 - Playwright E2E smoke test + optional risk/control/action/evidence/framework/libraries/settings tests
 
@@ -269,6 +274,7 @@ The workflow runs:
 ## Notes
 
 - `tests/e2e/risks.create.spec.ts`, `tests/e2e/controls.create.spec.ts`, `tests/e2e/actions.create.spec.ts`, `tests/e2e/evidence.create.spec.ts`, `tests/e2e/frameworks.mapping.spec.ts`, `tests/e2e/libraries.bundles.spec.ts`, and `tests/e2e/settings.roles.spec.ts` skip automatically if required credentials are not set.
+- `tests/e2e/control-tests.findings.spec.ts` validates failed control test -> finding creation -> retest closure.
 - `frameworks.mapping.spec.ts` requires admin credentials and at least one seeded control + framework requirement.
 - Framework mappings page is admin-only by design.
 - Libraries page is admin-only by design.

@@ -92,6 +92,21 @@ type ControlReviewRow = {
   completed_at: string | null;
 };
 
+type ControlTestRow = {
+  id: string;
+  result: string;
+  test_period_start: string;
+  test_period_end: string;
+};
+
+type FindingRow = {
+  id: string;
+  title: string;
+  status: string;
+  severity: string;
+  due_date: string | null;
+};
+
 async function getControlById(controlId: string) {
   const supabase = await createSupabaseServerClient();
   const { data } = await supabase
@@ -241,6 +256,34 @@ async function getControlReviews(controlId: string) {
   return data ?? [];
 }
 
+async function getControlTests(controlId: string) {
+  const supabase = await createSupabaseServerClient();
+  const { data } = await supabase
+    .from("control_tests")
+    .select("id, result, test_period_start, test_period_end")
+    .eq("control_id", controlId)
+    .is("deleted_at", null)
+    .order("updated_at", { ascending: false })
+    .limit(5)
+    .returns<ControlTestRow[]>();
+
+  return data ?? [];
+}
+
+async function getControlFindings(controlId: string) {
+  const supabase = await createSupabaseServerClient();
+  const { data } = await supabase
+    .from("findings")
+    .select("id, title, status, severity, due_date")
+    .eq("control_id", controlId)
+    .is("deleted_at", null)
+    .order("updated_at", { ascending: false })
+    .limit(5)
+    .returns<FindingRow[]>();
+
+  return data ?? [];
+}
+
 export default async function ControlDetailPage({
   params,
   searchParams,
@@ -261,7 +304,7 @@ export default async function ControlDetailPage({
     notFound();
   }
 
-  const [owner, linkedRisks, evidence, frameworkMappings, auditEntries, comments, reviews] =
+  const [owner, linkedRisks, evidence, frameworkMappings, auditEntries, comments, reviews, controlTests, findings] =
     await Promise.all([
     getOwner(control.owner_profile_id),
     getLinkedRisks(control.id),
@@ -270,6 +313,8 @@ export default async function ControlDetailPage({
     getAuditEntries("control", control.id),
     getControlComments(control.id),
     getControlReviews(control.id),
+    getControlTests(control.id),
+    getControlFindings(control.id),
   ]);
   const evidenceDownloadUrls = await getEvidenceSignedUrlById(evidence);
 
@@ -332,6 +377,75 @@ export default async function ControlDetailPage({
         controlId={control.id}
         canEdit={canEdit}
       />
+
+      <section className="rounded-xl border bg-card p-6">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h2 className="text-lg font-semibold tracking-tight">Control tests</h2>
+          {canEdit ? (
+            <Link
+              href={`/dashboard/control-tests/new?controlId=${control.id}`}
+              className={buttonVariants({ variant: "outline" })}
+            >
+              New test
+            </Link>
+          ) : null}
+        </div>
+
+        {controlTests.length === 0 ? (
+          <p className="mt-3 text-sm text-muted-foreground">No control tests yet.</p>
+        ) : (
+          <ul className="mt-4 space-y-3">
+            {controlTests.map((test) => (
+              <li key={test.id} className="rounded-lg border p-3">
+                <Link
+                  href={`/dashboard/control-tests/${test.id}`}
+                  className="text-sm font-medium hover:underline"
+                >
+                  {test.result} test
+                </Link>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  {test.test_period_start} to {test.test_period_end}
+                </p>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+
+      <section className="rounded-xl border bg-card p-6">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h2 className="text-lg font-semibold tracking-tight">Findings</h2>
+          {canEdit ? (
+            <Link
+              href={`/dashboard/findings/new?controlId=${control.id}`}
+              className={buttonVariants({ variant: "outline" })}
+            >
+              New finding
+            </Link>
+          ) : null}
+        </div>
+
+        {findings.length === 0 ? (
+          <p className="mt-3 text-sm text-muted-foreground">No findings linked to this control.</p>
+        ) : (
+          <ul className="mt-4 space-y-3">
+            {findings.map((finding) => (
+              <li key={finding.id} className="rounded-lg border p-3">
+                <Link
+                  href={`/dashboard/findings/${finding.id}`}
+                  className="text-sm font-medium hover:underline"
+                >
+                  {finding.title}
+                </Link>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  {finding.status} / {finding.severity}
+                  {finding.due_date ? ` / due ${finding.due_date}` : ""}
+                </p>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
 
       <EvidenceListSection
         title="Evidence"

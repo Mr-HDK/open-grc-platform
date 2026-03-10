@@ -67,6 +67,7 @@ La base actuelle couvre:
 - notifications utiles (actions en retard, controles a revoir)
 - registre incidents (statuts simples, liens vers risques/actions)
 - revues periodiques des controles (statut + date cible)
+- campagnes de test des controles + constats (findings)
 
 ## 6. Phase actuelle
 
