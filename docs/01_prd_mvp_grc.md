@@ -63,6 +63,7 @@ La base actuelle couvre:
 - audit log minimal
 - admin settings (roles, invite, deactivate, transfer ownership)
 - imports/exports simples (risques/controles)
+- collaboration legere (commentaires, activity trail)
 
 ## 6. Phase actuelle
 

@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 
 import { archiveRiskAction } from "@/app/dashboard/risks/actions";
 import { AuditLogSection } from "@/components/audit/audit-log-section";
+import { CommentsSection, type CommentItem } from "@/components/comments/comments-section";
 import { FeedbackAlert } from "@/components/ui/feedback-alert";
 import { buttonVariants } from "@/components/ui/button";
 import { EvidenceListSection } from "@/components/evidence/evidence-list-section";
@@ -60,6 +61,16 @@ type LinkedActionRow = {
   status: string;
   priority: string;
   target_date: string;
+};
+
+type CommentRow = {
+  id: string;
+  body: string;
+  created_at: string;
+  profiles: {
+    email: string;
+    full_name: string | null;
+  } | null;
 };
 
 async function getRiskById(riskId: string) {
@@ -136,12 +147,34 @@ async function getLinkedActionPlans(riskId: string) {
   return data ?? [];
 }
 
+async function getRiskComments(riskId: string) {
+  const supabase = await createSupabaseServerClient();
+  const { data } = await supabase
+    .from("comments")
+    .select("id, body, created_at, profiles(email, full_name)")
+    .eq("entity_type", "risk")
+    .eq("entity_id", riskId)
+    .order("created_at", { ascending: false })
+    .returns<CommentRow[]>();
+
+  return (data ?? []).map<CommentItem>((comment) => ({
+    id: comment.id,
+    body: comment.body,
+    createdAt: comment.created_at,
+    authorLabel: comment.profiles
+      ? comment.profiles.full_name
+        ? `${comment.profiles.full_name} (${comment.profiles.email})`
+        : comment.profiles.email
+      : "Unknown user",
+  }));
+}
+
 export default async function RiskDetailPage({
   params,
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ error?: string }>;
+  searchParams: Promise<{ error?: string; success?: string }>;
 }) {
   const profile = await requireSessionProfile("viewer");
   const canEdit = hasRole("contributor", profile.role);
@@ -155,12 +188,13 @@ export default async function RiskDetailPage({
     notFound();
   }
 
-  const [owner, linkedControls, linkedActionPlans, evidence, auditEntries] = await Promise.all([
+  const [owner, linkedControls, linkedActionPlans, evidence, auditEntries, comments] = await Promise.all([
     getOwner(risk.owner_profile_id),
     getLinkedControls(risk.id),
     getLinkedActionPlans(risk.id),
     getRiskEvidence(risk.id),
     getAuditEntries("risk", risk.id),
+    getRiskComments(risk.id),
   ]);
   const evidenceDownloadUrls = await getEvidenceSignedUrlById(evidence);
 
@@ -196,6 +230,9 @@ export default async function RiskDetailPage({
       </div>
 
       {query.error ? <FeedbackAlert message={decodeURIComponent(query.error)} /> : null}
+      {query.success === "comment" ? (
+        <FeedbackAlert variant="success" message="Comment posted." />
+      ) : null}
 
       <div className="rounded-xl border bg-card p-6">
         <p className="text-sm text-muted-foreground">Description</p>
@@ -298,6 +335,13 @@ export default async function RiskDetailPage({
           download_url: evidenceDownloadUrls.get(item.id) ?? null,
         }))}
         createHref={`/dashboard/evidence/new?riskId=${risk.id}`}
+        canCreate={canEdit}
+      />
+
+      <CommentsSection
+        entityType="risk"
+        entityId={risk.id}
+        items={comments}
         canCreate={canEdit}
       />
 

@@ -71,6 +71,9 @@ Phase 1 foundation is implemented. This repository is no longer managed as a gre
 - Reporting module:
   - CSV/JSON exports for risks and controls
   - CSV/JSON imports for risks and controls with validation
+- Collaboration module:
+  - comments on risks, controls, and action plans
+  - activity visibility alongside audit history
 - SQL migrations and seed data
 - Playwright E2E smoke test + optional risk/control/action/evidence/framework/libraries/settings tests
 
