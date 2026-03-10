@@ -36,13 +36,14 @@ type ControlReviewRow = {
 async function validateControlReviewReferences(input: {
   controlId: string;
   reviewerProfileId: string | null;
-}) {
+}, organizationId: string) {
   const supabase = await createSupabaseServerClient();
 
   const { data: control } = await supabase
     .from("controls")
     .select("id")
     .eq("id", input.controlId)
+    .eq("organization_id", organizationId)
     .is("deleted_at", null)
     .maybeSingle<IdRow>();
 
@@ -55,6 +56,7 @@ async function validateControlReviewReferences(input: {
       .from("profiles")
       .select("id")
       .eq("id", input.reviewerProfileId)
+      .eq("organization_id", organizationId)
       .maybeSingle<IdRow>();
 
     if (!reviewer) {
@@ -75,7 +77,7 @@ export async function createControlReviewAction(formData: FormData) {
     );
   }
 
-  const referenceError = await validateControlReviewReferences(parsed.data);
+  const referenceError = await validateControlReviewReferences(parsed.data, profile.organizationId);
   if (referenceError) {
     redirect(`/dashboard/control-reviews/new?error=${encodeMessage(referenceError)}`);
   }
@@ -132,7 +134,7 @@ export async function updateControlReviewAction(formData: FormData) {
     );
   }
 
-  const referenceError = await validateControlReviewReferences(parsed.data);
+  const referenceError = await validateControlReviewReferences(parsed.data, profile.organizationId);
   if (referenceError) {
     redirect(`/dashboard/control-reviews/${reviewIdResult.data}/edit?error=${encodeMessage(referenceError)}`);
   }
@@ -142,6 +144,7 @@ export async function updateControlReviewAction(formData: FormData) {
     .from("control_reviews")
     .select("id, completed_at")
     .eq("id", reviewIdResult.data)
+    .eq("organization_id", profile.organizationId)
     .is("deleted_at", null)
     .maybeSingle<ControlReviewRow>();
 

@@ -34,7 +34,7 @@ async function validateIncidentReferences(input: {
   riskId: string | null;
   actionPlanId: string | null;
   ownerProfileId: string | null;
-}) {
+}, organizationId: string) {
   const supabase = await createSupabaseServerClient();
 
   if (input.ownerProfileId) {
@@ -42,6 +42,7 @@ async function validateIncidentReferences(input: {
       .from("profiles")
       .select("id")
       .eq("id", input.ownerProfileId)
+      .eq("organization_id", organizationId)
       .maybeSingle<IdRow>();
 
     if (!owner) {
@@ -54,6 +55,7 @@ async function validateIncidentReferences(input: {
       .from("risks")
       .select("id")
       .eq("id", input.riskId)
+      .eq("organization_id", organizationId)
       .is("deleted_at", null)
       .maybeSingle<IdRow>();
 
@@ -67,6 +69,7 @@ async function validateIncidentReferences(input: {
       .from("action_plans")
       .select("id")
       .eq("id", input.actionPlanId)
+      .eq("organization_id", organizationId)
       .is("deleted_at", null)
       .maybeSingle<IdRow>();
 
@@ -88,7 +91,7 @@ export async function createIncidentAction(formData: FormData) {
     );
   }
 
-  const referenceError = await validateIncidentReferences(parsed.data);
+  const referenceError = await validateIncidentReferences(parsed.data, profile.organizationId);
   if (referenceError) {
     redirect(`/dashboard/incidents/new?error=${encodeMessage(referenceError)}`);
   }
@@ -143,7 +146,7 @@ export async function updateIncidentAction(formData: FormData) {
     );
   }
 
-  const referenceError = await validateIncidentReferences(parsed.data);
+  const referenceError = await validateIncidentReferences(parsed.data, profile.organizationId);
   if (referenceError) {
     redirect(`/dashboard/incidents/${incidentIdResult.data}/edit?error=${encodeMessage(referenceError)}`);
   }

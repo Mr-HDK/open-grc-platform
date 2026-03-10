@@ -65,7 +65,7 @@ type IdRow = {
   id: string;
 };
 
-async function validateOwnerProfile(ownerProfileId: string | null) {
+async function validateOwnerProfile(ownerProfileId: string | null, organizationId: string) {
   if (!ownerProfileId) {
     return null;
   }
@@ -75,12 +75,13 @@ async function validateOwnerProfile(ownerProfileId: string | null) {
     .from("profiles")
     .select("id")
     .eq("id", ownerProfileId)
+    .eq("organization_id", organizationId)
     .maybeSingle<IdRow>();
 
   return data ? null : "Selected owner does not exist.";
 }
 
-async function validateActiveRisks(riskIds: string[]) {
+async function validateActiveRisks(riskIds: string[], organizationId: string) {
   if (riskIds.length === 0) {
     return null;
   }
@@ -90,6 +91,7 @@ async function validateActiveRisks(riskIds: string[]) {
     .from("risks")
     .select("id")
     .in("id", riskIds)
+    .eq("organization_id", organizationId)
     .is("deleted_at", null)
     .returns<IdRow[]>();
 
@@ -116,13 +118,13 @@ export async function createControlAction(formData: FormData) {
     );
   }
 
-  const ownerError = await validateOwnerProfile(parsed.data.ownerProfileId);
+  const ownerError = await validateOwnerProfile(parsed.data.ownerProfileId, profile.organizationId);
 
   if (ownerError) {
     redirect(`/dashboard/controls/new?error=${encodeMessage(ownerError)}`);
   }
 
-  const riskError = await validateActiveRisks(riskLinks.data);
+  const riskError = await validateActiveRisks(riskLinks.data, profile.organizationId);
 
   if (riskError) {
     redirect(`/dashboard/controls/new?error=${encodeMessage(riskError)}`);
@@ -194,13 +196,13 @@ export async function updateControlAction(formData: FormData) {
     );
   }
 
-  const ownerError = await validateOwnerProfile(parsed.data.ownerProfileId);
+  const ownerError = await validateOwnerProfile(parsed.data.ownerProfileId, profile.organizationId);
 
   if (ownerError) {
     redirect(`/dashboard/controls/${controlIdResult.data}/edit?error=${encodeMessage(ownerError)}`);
   }
 
-  const riskError = await validateActiveRisks(riskLinks.data);
+  const riskError = await validateActiveRisks(riskLinks.data, profile.organizationId);
 
   if (riskError) {
     redirect(`/dashboard/controls/${controlIdResult.data}/edit?error=${encodeMessage(riskError)}`);

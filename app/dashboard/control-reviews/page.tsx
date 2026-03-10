@@ -5,12 +5,16 @@ import { FeedbackAlert } from "@/components/ui/feedback-alert";
 import { requireSessionProfile } from "@/lib/auth/profile";
 import { hasRole } from "@/lib/permissions/roles";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { controlReviewStatusOptions } from "@/lib/validators/control-review";
+import {
+  controlReviewStatusOptions,
+  isControlReviewStatus,
+  type ControlReviewStatus,
+} from "@/lib/validators/control-review";
 import { cn } from "@/lib/utils/cn";
 
 type ControlReviewRow = {
   id: string;
-  status: string;
+  status: ControlReviewStatus;
   target_date: string;
   completed_at: string | null;
   updated_at: string;
@@ -37,14 +41,13 @@ export default async function ControlReviewsPage({
   const supabase = await createSupabaseServerClient();
   const params = await searchParams;
 
-  const status = controlReviewStatusOptions.includes(params.status as (typeof controlReviewStatusOptions)[number])
-    ? (params.status ?? "")
-    : "";
+  const status = isControlReviewStatus(params.status) ? params.status : "";
   const controlId = params.controlId?.trim() ?? "";
 
   let query = supabase
     .from("control_reviews")
     .select("id, status, target_date, completed_at, updated_at, controls(id, code, title), profiles(email, full_name)")
+    .eq("organization_id", profile.organizationId)
     .is("deleted_at", null)
     .order("target_date", { ascending: true });
 
@@ -58,7 +61,12 @@ export default async function ControlReviewsPage({
 
   const [{ data: reviews, error }, { data: controls }] = await Promise.all([
     query.returns<ControlReviewRow[]>(),
-    supabase.from("controls").select("id, code, title").is("deleted_at", null).returns<ControlRow[]>(),
+    supabase
+      .from("controls")
+      .select("id, code, title")
+      .eq("organization_id", profile.organizationId)
+      .is("deleted_at", null)
+      .returns<ControlRow[]>(),
   ]);
 
   return (

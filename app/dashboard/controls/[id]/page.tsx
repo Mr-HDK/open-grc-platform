@@ -5,6 +5,8 @@ import { archiveControlAction } from "@/app/dashboard/controls/actions";
 import { AuditLogSection } from "@/components/audit/audit-log-section";
 import { buttonVariants } from "@/components/ui/button";
 import { CommentsSection, type CommentItem } from "@/components/comments/comments-section";
+import { ControlMetadataGrid } from "@/components/controls/control-metadata-grid";
+import { ControlReviewsSection } from "@/components/controls/control-reviews-section";
 import { LinkedRisksSection } from "@/components/controls/linked-risks-section";
 import { ControlFrameworkMappingsSection } from "@/components/frameworks/control-framework-mappings-section";
 import { FeedbackAlert } from "@/components/ui/feedback-alert";
@@ -259,7 +261,8 @@ export default async function ControlDetailPage({
     notFound();
   }
 
-  const [owner, linkedRisks, evidence, frameworkMappings, auditEntries, comments, reviews] = await Promise.all([
+  const [owner, linkedRisks, evidence, frameworkMappings, auditEntries, comments, reviews] =
+    await Promise.all([
     getOwner(control.owner_profile_id),
     getLinkedRisks(control.id),
     getControlEvidence(control.id),
@@ -313,75 +316,22 @@ export default async function ControlDetailPage({
         <p className="mt-2 whitespace-pre-line text-sm">{control.description}</p>
       </div>
 
-      <div className="grid gap-4 rounded-xl border bg-card p-6 md:grid-cols-3">
-        <div>
-          <p className="text-xs uppercase tracking-wide text-muted-foreground">Type</p>
-          <p className="mt-1 text-sm font-medium">{control.control_type}</p>
-        </div>
-        <div>
-          <p className="text-xs uppercase tracking-wide text-muted-foreground">Effectiveness</p>
-          <p className="mt-1 text-sm font-medium">{control.effectiveness_status}</p>
-        </div>
-        <div>
-          <p className="text-xs uppercase tracking-wide text-muted-foreground">Review frequency</p>
-          <p className="mt-1 text-sm font-medium">{control.review_frequency}</p>
-        </div>
-        <div>
-          <p className="text-xs uppercase tracking-wide text-muted-foreground">Next review</p>
-          <p className="mt-1 text-sm font-medium">{control.next_review_date ?? "-"}</p>
-        </div>
-        <div>
-          <p className="text-xs uppercase tracking-wide text-muted-foreground">Owner</p>
-          <p className="mt-1 text-sm font-medium">
-            {owner ? (owner.full_name ? `${owner.full_name} (${owner.email})` : owner.email) : "-"}
-          </p>
-        </div>
-        <div>
-          <p className="text-xs uppercase tracking-wide text-muted-foreground">Updated</p>
-          <p className="mt-1 text-sm font-medium">{new Date(control.updated_at).toLocaleString()}</p>
-        </div>
-      </div>
+      <ControlMetadataGrid control={control} owner={owner} />
 
       <LinkedRisksSection items={linkedRisks} />
 
       <ControlFrameworkMappingsSection items={frameworkMappings} />
 
-      <section className="rounded-xl border bg-card p-6">
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <h2 className="text-lg font-semibold tracking-tight">Control reviews</h2>
-          {canEdit ? (
-            <Link
-              href={`/dashboard/control-reviews/new?controlId=${control.id}`}
-              className={buttonVariants({ variant: "outline" })}
-            >
-              Schedule review
-            </Link>
-          ) : null}
-        </div>
-
-        {reviews.length === 0 ? (
-          <p className="mt-3 text-sm text-muted-foreground">No reviews scheduled yet.</p>
-        ) : (
-          <ul className="mt-4 space-y-3">
-            {reviews.map((review) => (
-              <li key={review.id} className="rounded-lg border p-3">
-                <Link
-                  href={`/dashboard/control-reviews/${review.id}`}
-                  className="text-sm font-medium hover:underline"
-                >
-                  {review.status} review
-                </Link>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  target {review.target_date} |{" "}
-                  {review.completed_at
-                    ? `completed ${new Date(review.completed_at).toLocaleDateString()}`
-                    : "pending"}
-                </p>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
+      <ControlReviewsSection
+        reviews={reviews.map((review) => ({
+          id: review.id,
+          status: review.status,
+          targetDate: review.target_date,
+          completedAt: review.completed_at,
+        }))}
+        controlId={control.id}
+        canEdit={canEdit}
+      />
 
       <EvidenceListSection
         title="Evidence"

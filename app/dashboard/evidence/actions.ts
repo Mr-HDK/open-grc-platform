@@ -53,7 +53,7 @@ async function validateEvidenceLinks(input: {
   riskId: string | null;
   controlId: string | null;
   actionPlanId: string | null;
-}) {
+}, organizationId: string) {
   const supabase = await createSupabaseServerClient();
 
   if (input.riskId) {
@@ -61,6 +61,7 @@ async function validateEvidenceLinks(input: {
       .from("risks")
       .select("id")
       .eq("id", input.riskId)
+      .eq("organization_id", organizationId)
       .is("deleted_at", null)
       .maybeSingle<IdRow>();
 
@@ -74,6 +75,7 @@ async function validateEvidenceLinks(input: {
       .from("controls")
       .select("id")
       .eq("id", input.controlId)
+      .eq("organization_id", organizationId)
       .is("deleted_at", null)
       .maybeSingle<IdRow>();
 
@@ -87,6 +89,7 @@ async function validateEvidenceLinks(input: {
       .from("action_plans")
       .select("id")
       .eq("id", input.actionPlanId)
+      .eq("organization_id", organizationId)
       .is("deleted_at", null)
       .maybeSingle<IdRow>();
 
@@ -115,7 +118,7 @@ export async function createEvidenceAction(formData: FormData) {
     redirect(`/dashboard/evidence/new?error=${encodeMessage(fileResult.error, "Invalid file.")}`);
   }
 
-  const linksError = await validateEvidenceLinks(parsed.data);
+  const linksError = await validateEvidenceLinks(parsed.data, profile.organizationId);
 
   if (linksError) {
     redirect(`/dashboard/evidence/new?error=${encodeMessage(linksError)}`);

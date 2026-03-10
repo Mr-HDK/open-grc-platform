@@ -5,6 +5,7 @@ import { ControlReviewForm } from "@/components/control-reviews/control-review-f
 import { updateControlReviewAction } from "@/app/dashboard/control-reviews/actions";
 import { requireSessionProfile } from "@/lib/auth/profile";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { isControlReviewStatus, type ControlReviewStatus } from "@/lib/validators/control-review";
 
 type OptionRow = {
   id: string;
@@ -17,18 +18,19 @@ type OptionRow = {
 type ControlReviewRow = {
   id: string;
   control_id: string;
-  status: string;
+  status: ControlReviewStatus;
   target_date: string;
   reviewer_profile_id: string | null;
   notes: string | null;
 };
 
-async function getControlReview(reviewId: string) {
+async function getControlReview(reviewId: string, organizationId: string) {
   const supabase = await createSupabaseServerClient();
   const { data } = await supabase
     .from("control_reviews")
     .select("id, control_id, status, target_date, reviewer_profile_id, notes")
     .eq("id", reviewId)
+    .eq("organization_id", organizationId)
     .is("deleted_at", null)
     .maybeSingle<ControlReviewRow>();
 
@@ -42,21 +44,27 @@ export default async function EditControlReviewPage({
   params: Promise<{ id: string }>;
   searchParams: Promise<{ error?: string }>;
 }) {
-  await requireSessionProfile("contributor");
+  const profile = await requireSessionProfile("contributor");
   const { id } = await params;
   const query = await searchParams;
 
   const supabase = await createSupabaseServerClient();
   const [{ data: review }, { data: controls }, { data: reviewers }] = await Promise.all([
-    getControlReview(id),
+    getControlReview(id, profile.organizationId),
     supabase
       .from("controls")
       .select("id, code, title")
+      .eq("organization_id", profile.organizationId)
       .is("deleted_at", null)
       .order("updated_at", { ascending: false })
       .limit(50)
       .returns<OptionRow[]>(),
-    supabase.from("profiles").select("id, email, full_name").order("email").returns<OptionRow[]>(),
+    supabase
+      .from("profiles")
+      .select("id, email, full_name")
+      .eq("organization_id", profile.organizationId)
+      .order("email")
+      .returns<OptionRow[]>(),
   ]);
 
   if (!review) {
@@ -84,7 +92,7 @@ export default async function EditControlReviewPage({
         defaults={{
           reviewId: review.id,
           controlId: review.control_id,
-          status: review.status as "scheduled" | "in_progress" | "completed",
+          status: isControlReviewStatus(review.status) ? review.status : "scheduled",
           targetDate: review.target_date,
           reviewerProfileId: review.reviewer_profile_id,
           notes: review.notes,

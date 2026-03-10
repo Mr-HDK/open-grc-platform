@@ -26,7 +26,7 @@ type ControlRow = { id: string; code: string; title: string };
 
 type ReviewerRow = { id: string; email: string; full_name: string | null };
 
-async function getControlReviewById(reviewId: string) {
+async function getControlReviewById(reviewId: string, organizationId: string) {
   const supabase = await createSupabaseServerClient();
   const { data } = await supabase
     .from("control_reviews")
@@ -34,24 +34,26 @@ async function getControlReviewById(reviewId: string) {
       "id, status, target_date, completed_at, notes, control_id, reviewer_profile_id, created_at, updated_at",
     )
     .eq("id", reviewId)
+    .eq("organization_id", organizationId)
     .is("deleted_at", null)
     .maybeSingle<ControlReviewDetail>();
 
   return data;
 }
 
-async function getControl(controlId: string) {
+async function getControl(controlId: string, organizationId: string) {
   const supabase = await createSupabaseServerClient();
   const { data } = await supabase
     .from("controls")
     .select("id, code, title")
     .eq("id", controlId)
+    .eq("organization_id", organizationId)
     .maybeSingle<ControlRow>();
 
   return data;
 }
 
-async function getReviewer(reviewerId: string | null) {
+async function getReviewer(reviewerId: string | null, organizationId: string) {
   if (!reviewerId) {
     return null;
   }
@@ -61,6 +63,7 @@ async function getReviewer(reviewerId: string | null) {
     .from("profiles")
     .select("id, email, full_name")
     .eq("id", reviewerId)
+    .eq("organization_id", organizationId)
     .maybeSingle<ReviewerRow>();
 
   return data;
@@ -79,15 +82,15 @@ export default async function ControlReviewDetailPage({
 
   const { id } = await params;
   const query = await searchParams;
-  const review = await getControlReviewById(id);
+  const review = await getControlReviewById(id, profile.organizationId);
 
   if (!review) {
     notFound();
   }
 
   const [control, reviewer, auditEntries] = await Promise.all([
-    getControl(review.control_id),
-    getReviewer(review.reviewer_profile_id),
+    getControl(review.control_id, profile.organizationId),
+    getReviewer(review.reviewer_profile_id, profile.organizationId),
     getAuditEntries("control_review", review.id),
   ]);
 

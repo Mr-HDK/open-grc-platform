@@ -30,7 +30,7 @@ type IdRow = {
   id: string;
 };
 
-async function validateOwnerProfile(ownerProfileId: string | null) {
+async function validateOwnerProfile(ownerProfileId: string | null, organizationId: string) {
   if (!ownerProfileId) {
     return null;
   }
@@ -40,6 +40,7 @@ async function validateOwnerProfile(ownerProfileId: string | null) {
     .from("profiles")
     .select("id")
     .eq("id", ownerProfileId)
+    .eq("organization_id", organizationId)
     .maybeSingle<IdRow>();
 
   return owner ? null : "Selected owner does not exist.";
@@ -55,7 +56,7 @@ export async function createRiskAction(formData: FormData) {
     );
   }
 
-  const ownerError = await validateOwnerProfile(parsed.data.ownerProfileId);
+  const ownerError = await validateOwnerProfile(parsed.data.ownerProfileId, profile.organizationId);
   if (ownerError) {
     redirect(`/dashboard/risks/new?error=${encodeMessage(ownerError)}`);
   }
@@ -109,7 +110,7 @@ export async function updateRiskAction(formData: FormData) {
     );
   }
 
-  const ownerError = await validateOwnerProfile(parsed.data.ownerProfileId);
+  const ownerError = await validateOwnerProfile(parsed.data.ownerProfileId, profile.organizationId);
   if (ownerError) {
     redirect(`/dashboard/risks/${riskIdResult.data}/edit?error=${encodeMessage(ownerError)}`);
   }

@@ -143,6 +143,7 @@ tests/
 
 - Node.js 20+
 - A Supabase project
+- Supabase CLI (available via `npx supabase`)
 
 ## Environment variables
 
@@ -154,6 +155,11 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=
 SUPABASE_SERVICE_ROLE_KEY=
 DIRECT_URL=
 ```
+
+Notes:
+
+- `SUPABASE_SERVICE_ROLE_KEY` is required for `npm run db:setup`.
+- `DIRECT_URL` must point to the same Supabase project as `NEXT_PUBLIC_SUPABASE_URL`.
 
 Optional E2E credentials:
 
@@ -180,6 +186,9 @@ This command:
 - seeds baseline data from `supabase/seed/seed.sql`
 - backfills seed-dependent action/evidence rows when needed
 
+If you encounter `profile_missing` or `organization_missing` errors on login, re-run `npm run db:setup`
+and confirm the project reference in `DIRECT_URL` matches your Supabase URL.
+
 ## Run locally
 
 ```bash
@@ -196,6 +205,15 @@ Open `http://localhost:3000`.
 3. Run `npm run db:setup`.
 4. Start local server with `npm run dev`.
 5. Login with a seeded account and verify access by role.
+
+## Seeded test users
+
+Default seeded credentials (change before production use):
+
+- `admin@open-grc.local` / `ChangeMe123!`
+- `manager@open-grc.local` / `ChangeMe123!`
+- `contributor@open-grc.local` / `ChangeMe123!`
+- `viewer@open-grc.local` / `ChangeMe123!`
 
 ## Quality commands
 
@@ -246,6 +264,7 @@ The workflow runs:
 - Audit log events are best-effort and do not block core create/update/archive operations.
 - Default E2E run is serial (`npm run test:e2e`) for deterministic CI/dev baselines.
 - `npm run test:e2e:parallel` is available for faster local stress runs.
+- If login redirects with `profile_missing`/`organization_missing`, re-run `npm run db:setup` and sign in again.
 
 ## Notes
 
@@ -257,10 +276,7 @@ The workflow runs:
 
 ## Next-phase roadmap
 
-- Add dedicated E2E coverage for audit log history entries.
-- Add optimistic UI feedback for form submissions (pending/success state).
-- Expand admin settings with invite, deactivate, and controlled ownership transfer flows.
-- Expand library coverage and add import flows for custom risk/control bundles.
-- Add export/reporting flows for audit packs and management reporting.
-- Add lightweight collaboration features such as comments and reminders.
-- Evaluate selective new modules only after the above items are stable.
+- Expand admin lifecycle tooling (invite, deactivate, ownership transfer).
+- Add audit pack exports and stronger reporting for management reviews.
+- Increase E2E coverage for audit log entries, incidents, and control reviews.
+- Introduce a lightweight background scheduler for reminders and overdue items.

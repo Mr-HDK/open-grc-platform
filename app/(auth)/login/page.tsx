@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
+import { FeedbackAlert } from "@/components/ui/feedback-alert";
 import { Input } from "@/components/ui/input";
 import { getSessionUser } from "@/lib/auth/session";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -28,8 +29,10 @@ async function signIn(formData: FormData) {
 const errorMessageByCode: Record<string, string> = {
   invalid_credentials: "Invalid credentials. Please try again.",
   missing_credentials: "Email and password are required.",
-  profile_missing: "Profile bootstrap failed. Verify SQL migration and seed.",
-  organization_missing: "Organization context is missing. Re-run database setup and migrations.",
+  profile_missing:
+    "Your profile could not be loaded. Run `npm run db:setup` or ask an admin to confirm profiles are seeded.",
+  organization_missing:
+    "Organization context is missing. Run `npm run db:setup` before signing in.",
 };
 
 export default async function LoginPage({
@@ -37,14 +40,20 @@ export default async function LoginPage({
 }: {
   searchParams: Promise<{ error?: string }>;
 }) {
+  const params = await searchParams;
+  const errorCode = params.error;
+  const errorMessage = errorCode ? errorMessageByCode[errorCode] : null;
   const user = await getSessionUser();
 
-  if (user) {
+  const shouldHoldOnError =
+    errorCode === "profile_missing" || errorCode === "organization_missing";
+
+  if (user && shouldHoldOnError) {
+    const supabase = await createSupabaseServerClient();
+    await supabase.auth.signOut();
+  } else if (user) {
     redirect("/dashboard");
   }
-
-  const params = await searchParams;
-  const errorMessage = params.error ? errorMessageByCode[params.error] : null;
 
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-md items-center px-6 py-12">
@@ -54,11 +63,7 @@ export default async function LoginPage({
           Use a Supabase user from your project.
         </p>
 
-        {errorMessage ? (
-          <p className="mt-4 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">
-            {errorMessage}
-          </p>
-        ) : null}
+        {errorMessage ? <FeedbackAlert message={errorMessage} /> : null}
 
         <form action={signIn} className="mt-6 space-y-4">
           <div className="space-y-2">

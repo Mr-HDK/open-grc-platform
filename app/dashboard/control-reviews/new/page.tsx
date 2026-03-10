@@ -26,11 +26,17 @@ export default async function NewControlReviewPage({
     supabase
       .from("controls")
       .select("id, code, title")
+      .eq("organization_id", profile.organizationId)
       .is("deleted_at", null)
       .order("updated_at", { ascending: false })
       .limit(50)
       .returns<OptionRow[]>(),
-    supabase.from("profiles").select("id, email, full_name").order("email").returns<OptionRow[]>(),
+    supabase
+      .from("profiles")
+      .select("id, email, full_name")
+      .eq("organization_id", profile.organizationId)
+      .order("email")
+      .returns<OptionRow[]>(),
   ]);
 
   return (

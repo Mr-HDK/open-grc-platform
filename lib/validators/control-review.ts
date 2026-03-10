@@ -4,6 +4,12 @@ export const controlReviewStatusOptions = ["scheduled", "in_progress", "complete
 
 export type ControlReviewStatus = (typeof controlReviewStatusOptions)[number];
 
+export function isControlReviewStatus(
+  value: string | null | undefined,
+): value is ControlReviewStatus {
+  return controlReviewStatusOptions.includes(value as ControlReviewStatus);
+}
+
 const optionalUuidField = z
   .string()
   .trim()

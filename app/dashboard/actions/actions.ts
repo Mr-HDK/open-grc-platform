@@ -37,7 +37,7 @@ async function validateActionPlanReferences(input: {
   riskId: string | null;
   controlId: string | null;
   ownerProfileId: string | null;
-}) {
+}, organizationId: string) {
   const supabase = await createSupabaseServerClient();
 
   if (input.ownerProfileId) {
@@ -45,6 +45,7 @@ async function validateActionPlanReferences(input: {
       .from("profiles")
       .select("id")
       .eq("id", input.ownerProfileId)
+      .eq("organization_id", organizationId)
       .maybeSingle<IdRow>();
 
     if (!owner) {
@@ -57,6 +58,7 @@ async function validateActionPlanReferences(input: {
       .from("risks")
       .select("id")
       .eq("id", input.riskId)
+      .eq("organization_id", organizationId)
       .is("deleted_at", null)
       .maybeSingle<IdRow>();
 
@@ -70,6 +72,7 @@ async function validateActionPlanReferences(input: {
       .from("controls")
       .select("id")
       .eq("id", input.controlId)
+      .eq("organization_id", organizationId)
       .is("deleted_at", null)
       .maybeSingle<IdRow>();
 
@@ -91,7 +94,7 @@ export async function createActionPlanAction(formData: FormData) {
     );
   }
 
-  const referenceError = await validateActionPlanReferences(parsed.data);
+  const referenceError = await validateActionPlanReferences(parsed.data, profile.organizationId);
 
   if (referenceError) {
     redirect(`/dashboard/actions/new?error=${encodeMessage(referenceError)}`);
@@ -150,7 +153,7 @@ export async function updateActionPlanAction(formData: FormData) {
     );
   }
 
-  const referenceError = await validateActionPlanReferences(parsed.data);
+  const referenceError = await validateActionPlanReferences(parsed.data, profile.organizationId);
 
   if (referenceError) {
     redirect(`/dashboard/actions/${actionPlanIdResult.data}/edit?error=${encodeMessage(referenceError)}`);
