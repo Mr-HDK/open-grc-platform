@@ -141,6 +141,28 @@ Champs:
 - notes nullable
 - created_at
 
+## framework_requirement_assessments
+
+Champs:
+- id
+- organization_id
+- framework_requirement_id
+- status (compliant, partial, gap, not_applicable)
+- justification nullable (required for partial/gap/not_applicable)
+- assessed_at
+- assessed_by_profile_id nullable
+- created_by nullable
+- updated_by nullable
+- created_at
+- updated_at
+
+## framework_requirement_assessment_evidence
+
+Champs:
+- assessment_id
+- evidence_id
+- created_at
+
 ## audit_log
 
 Champs:
@@ -165,6 +187,8 @@ Champs:
 - control 1..n evidence
 - action_plan 1..n evidence
 - control n..n framework_requirements via control_framework_mappings
+- framework_requirement 1..1 assessment per organization
+- assessment n..n evidence via framework_requirement_assessment_evidence
 
 ## Enums suggérés
 

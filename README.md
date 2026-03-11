@@ -43,10 +43,15 @@ Phase 1 foundation is implemented. This repository is no longer managed as a gre
   - signed download links with short-lived URL expiration
   - simple archive flow
   - evidence sections on risk/control/action detail pages
-- Framework Mappings module:
+- Framework compliance module:
   - tables `frameworks`, `framework_requirements`, `control_framework_mappings`
+  - tables `framework_requirement_assessments`, `framework_requirement_assessment_evidence`
   - seed for COBIT, ISO 27001, NIST CSF, NIS2
   - admin mapping UI for assigning multiple requirements to a control
+  - requirement-level assessments (`compliant`, `partial`, `gap`, `not_applicable`)
+  - mandatory justification for `partial`, `gap`, and `not_applicable`
+  - optional evidence linkage per requirement assessment
+  - consolidated framework coverage and gap-rate view
   - mappings displayed on control detail page
 - Libraries module:
   - admin-only reusable bundle catalog
@@ -178,6 +183,8 @@ E2E_RISK_TEST_EMAIL=
 E2E_RISK_TEST_PASSWORD=
 E2E_ADMIN_TEST_EMAIL=
 E2E_ADMIN_TEST_PASSWORD=
+E2E_CONTRIBUTOR_TEST_EMAIL=
+E2E_CONTRIBUTOR_TEST_PASSWORD=
 ```
 
 ## Database setup

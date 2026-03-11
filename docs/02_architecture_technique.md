@@ -119,6 +119,8 @@ Regles de base:
 - frameworks
 - framework_requirements
 - control_framework_mappings
+- framework_requirement_assessments
+- framework_requirement_assessment_evidence
 - audit_log
 
 ## Scoring de base

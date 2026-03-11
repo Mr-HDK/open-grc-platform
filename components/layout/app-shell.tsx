@@ -19,6 +19,7 @@ const baseNavLinks = [
   { href: "/dashboard/actions", label: "Actions" },
   { href: "/dashboard/incidents", label: "Incidents" },
   { href: "/dashboard/evidence", label: "Evidence" },
+  { href: "/dashboard/frameworks", label: "Frameworks" },
 ];
 
 const roleBadgeClass: Record<Role, string> = {
@@ -32,7 +33,6 @@ export function AppShell({ userEmail, userRole, children }: AppShellProps) {
   const navLinks = [...baseNavLinks];
 
   if (userRole === "admin") {
-    navLinks.push({ href: "/dashboard/frameworks", label: "Frameworks" });
     navLinks.push({ href: "/dashboard/libraries", label: "Libraries" });
     navLinks.push({ href: "/dashboard/settings", label: "Settings" });
   }
