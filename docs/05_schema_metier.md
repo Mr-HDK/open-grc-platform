@@ -75,6 +75,41 @@ Champs:
 - rationale
 - created_at
 
+## assets
+
+Champs:
+- id
+- organization_id
+- name
+- asset_type
+- criticality
+- status
+- owner_profile_id nullable
+- description nullable
+- created_by nullable
+- updated_by nullable
+- created_at
+- updated_at
+- deleted_at
+
+## asset_risks
+
+Table pivot.
+
+Champs:
+- asset_id
+- risk_id
+- created_at
+
+## asset_controls
+
+Table pivot.
+
+Champs:
+- asset_id
+- control_id
+- created_at
+
 ## action_plans
 
 Champs:
@@ -187,6 +222,8 @@ Champs:
 - control 1..n evidence
 - action_plan 1..n evidence
 - control n..n framework_requirements via control_framework_mappings
+- asset n..n risks via asset_risks
+- asset n..n controls via asset_controls
 - framework_requirement 1..1 assessment per organization
 - assessment n..n evidence via framework_requirement_assessment_evidence
 

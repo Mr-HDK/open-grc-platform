@@ -114,6 +114,9 @@ Regles de base:
 - risks
 - controls
 - risk_controls
+- assets
+- asset_risks
+- asset_controls
 - action_plans
 - evidence
 - frameworks

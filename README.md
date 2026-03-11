@@ -28,6 +28,13 @@ Phase 1 foundation is implemented. This repository is no longer managed as a gre
   - control-to-many-risks linking
   - effectiveness status, owner, and review frequency
   - detail view with linked risks
+- Asset Register module:
+  - tables `assets`, `asset_risks`, `asset_controls`
+  - list + search + filters (type, criticality, owner, status)
+  - create + edit + detail
+  - n-n linking with risks and controls
+  - linked asset sections on risk and control detail pages
+  - soft archive (manager+)
 - Action Plans module:
   - `action_plans` migration
   - list + search + filters (status, priority, overdue)
@@ -124,6 +131,7 @@ Guardrails:
 app/
   (auth)/login/
   dashboard/
+    assets/
     risks/
     controls/
     actions/
@@ -132,6 +140,7 @@ app/
     libraries/
     settings/
 components/
+  assets/
   audit/
   layout/
   risks/

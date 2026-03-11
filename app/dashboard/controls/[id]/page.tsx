@@ -107,6 +107,17 @@ type FindingRow = {
   due_date: string | null;
 };
 
+type LinkedAssetRow = {
+  assets: {
+    id: string;
+    name: string;
+    asset_type: string;
+    criticality: string;
+    status: string;
+    deleted_at: string | null;
+  } | null;
+};
+
 async function getControlById(controlId: string) {
   const supabase = await createSupabaseServerClient();
   const { data } = await supabase
@@ -284,6 +295,25 @@ async function getControlFindings(controlId: string) {
   return data ?? [];
 }
 
+async function getLinkedAssets(controlId: string) {
+  const supabase = await createSupabaseServerClient();
+  const { data } = await supabase
+    .from("asset_controls")
+    .select("assets(id, name, asset_type, criticality, status, deleted_at)")
+    .eq("control_id", controlId)
+    .returns<LinkedAssetRow[]>();
+
+  return (data ?? [])
+    .filter((row) => row.assets && !row.assets.deleted_at)
+    .map((row) => ({
+      id: row.assets!.id,
+      name: row.assets!.name,
+      assetType: row.assets!.asset_type,
+      criticality: row.assets!.criticality,
+      status: row.assets!.status,
+    }));
+}
+
 export default async function ControlDetailPage({
   params,
   searchParams,
@@ -304,10 +334,11 @@ export default async function ControlDetailPage({
     notFound();
   }
 
-  const [owner, linkedRisks, evidence, frameworkMappings, auditEntries, comments, reviews, controlTests, findings] =
+  const [owner, linkedRisks, linkedAssets, evidence, frameworkMappings, auditEntries, comments, reviews, controlTests, findings] =
     await Promise.all([
     getOwner(control.owner_profile_id),
     getLinkedRisks(control.id),
+    getLinkedAssets(control.id),
     getControlEvidence(control.id),
     getFrameworkMappings(control.id),
     getAuditEntries("control", control.id),
@@ -364,6 +395,40 @@ export default async function ControlDetailPage({
       <ControlMetadataGrid control={control} owner={owner} />
 
       <LinkedRisksSection items={linkedRisks} />
+
+      <section className="rounded-xl border bg-card p-6">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h2 className="text-lg font-semibold tracking-tight">Linked assets</h2>
+          {canEdit ? (
+            <Link
+              href={`/dashboard/assets/new?controlId=${control.id}`}
+              className={buttonVariants({ variant: "outline" })}
+            >
+              Link asset
+            </Link>
+          ) : null}
+        </div>
+
+        {linkedAssets.length === 0 ? (
+          <p className="mt-3 text-sm text-muted-foreground">No assets linked to this control.</p>
+        ) : (
+          <ul className="mt-4 space-y-3">
+            {linkedAssets.map((asset) => (
+              <li key={asset.id} className="rounded-lg border p-3">
+                <Link
+                  href={`/dashboard/assets/${asset.id}`}
+                  className="text-sm font-medium hover:underline"
+                >
+                  {asset.name}
+                </Link>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  {asset.assetType} | {asset.criticality} | {asset.status}
+                </p>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
 
       <ControlFrameworkMappingsSection items={frameworkMappings} />
 

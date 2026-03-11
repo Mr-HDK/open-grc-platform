@@ -63,6 +63,17 @@ type LinkedActionRow = {
   target_date: string;
 };
 
+type LinkedAssetRow = {
+  assets: {
+    id: string;
+    name: string;
+    asset_type: string;
+    criticality: string;
+    status: string;
+    deleted_at: string | null;
+  } | null;
+};
+
 type CommentRow = {
   id: string;
   body: string;
@@ -153,6 +164,25 @@ async function getLinkedActionPlans(riskId: string) {
   return data ?? [];
 }
 
+async function getLinkedAssets(riskId: string) {
+  const supabase = await createSupabaseServerClient();
+  const { data } = await supabase
+    .from("asset_risks")
+    .select("assets(id, name, asset_type, criticality, status, deleted_at)")
+    .eq("risk_id", riskId)
+    .returns<LinkedAssetRow[]>();
+
+  return (data ?? [])
+    .filter((row) => row.assets && !row.assets.deleted_at)
+    .map((row) => ({
+      id: row.assets!.id,
+      name: row.assets!.name,
+      assetType: row.assets!.asset_type,
+      criticality: row.assets!.criticality,
+      status: row.assets!.status,
+    }));
+}
+
 async function getRiskComments(riskId: string) {
   const supabase = await createSupabaseServerClient();
   const { data } = await supabase
@@ -209,9 +239,10 @@ export default async function RiskDetailPage({
     notFound();
   }
 
-  const [owner, linkedControls, linkedActionPlans, evidence, auditEntries, comments, riskAcceptances] = await Promise.all([
+  const [owner, linkedControls, linkedAssets, linkedActionPlans, evidence, auditEntries, comments, riskAcceptances] = await Promise.all([
     getOwner(risk.owner_profile_id),
     getLinkedControls(risk.id),
+    getLinkedAssets(risk.id),
     getLinkedActionPlans(risk.id),
     getRiskEvidence(risk.id),
     getAuditEntries("risk", risk.id),
@@ -353,6 +384,40 @@ export default async function RiskDetailPage({
                 {control.rationale ? (
                   <p className="mt-2 text-xs text-muted-foreground">{control.rationale}</p>
                 ) : null}
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+
+      <section className="rounded-xl border bg-card p-6">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h2 className="text-lg font-semibold tracking-tight">Linked assets</h2>
+          {canEdit ? (
+            <Link
+              href={`/dashboard/assets/new?riskId=${risk.id}`}
+              className={buttonVariants({ variant: "outline" })}
+            >
+              Link asset
+            </Link>
+          ) : null}
+        </div>
+
+        {linkedAssets.length === 0 ? (
+          <p className="mt-3 text-sm text-muted-foreground">No assets linked to this risk.</p>
+        ) : (
+          <ul className="mt-4 space-y-3">
+            {linkedAssets.map((asset) => (
+              <li key={asset.id} className="rounded-lg border p-3">
+                <Link
+                  href={`/dashboard/assets/${asset.id}`}
+                  className="text-sm font-medium hover:underline"
+                >
+                  {asset.name}
+                </Link>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  {asset.assetType} | {asset.criticality} | {asset.status}
+                </p>
               </li>
             ))}
           </ul>

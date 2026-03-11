@@ -9,7 +9,8 @@ export type AuditEntityType =
   | "control_test"
   | "finding"
   | "risk_acceptance"
-  | "framework_requirement_assessment";
+  | "framework_requirement_assessment"
+  | "asset";
 export type AuditAction = "create" | "update" | "soft_delete";
 
 export type AuditEntry = {
