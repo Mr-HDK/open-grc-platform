@@ -117,6 +117,11 @@ Regles de base:
 - assets
 - asset_risks
 - asset_controls
+- third_parties
+- third_party_risks
+- third_party_controls
+- third_party_actions
+- third_party_reviews
 - action_plans
 - evidence
 - frameworks

@@ -92,6 +92,11 @@ Phase 1 foundation is implemented. This repository is no longer managed as a gre
 - Incident Register module:
   - incident CRUD with status tracking
   - optional links to risks and action plans
+- Third-Party Risk Lite module:
+  - vendor register with service, criticality, owner, and current posture
+  - simple assessment score and next review planning
+  - links to existing risks, controls, and action plans
+  - periodic review log that updates the latest assessment snapshot
 - Control Reviews module:
   - scheduled review tracking for controls
   - status, target date, and completion tracking
@@ -132,6 +137,7 @@ app/
   (auth)/login/
   dashboard/
     assets/
+    third-parties/
     risks/
     controls/
     actions/
@@ -141,6 +147,7 @@ app/
     settings/
 components/
   assets/
+  third-parties/
   audit/
   layout/
   risks/

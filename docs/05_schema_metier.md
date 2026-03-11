@@ -110,6 +110,70 @@ Champs:
 - control_id
 - created_at
 
+## third_parties
+
+Champs:
+- id
+- organization_id
+- name
+- service
+- criticality
+- assessment_status
+- assessment_score
+- next_review_date nullable
+- last_reviewed_at nullable
+- owner_profile_id nullable
+- notes nullable
+- created_by nullable
+- updated_by nullable
+- created_at
+- updated_at
+- deleted_at
+
+## third_party_risks
+
+Table pivot.
+
+Champs:
+- third_party_id
+- risk_id
+- created_at
+
+## third_party_controls
+
+Table pivot.
+
+Champs:
+- third_party_id
+- control_id
+- created_at
+
+## third_party_actions
+
+Table pivot.
+
+Champs:
+- third_party_id
+- action_plan_id
+- created_at
+
+## third_party_reviews
+
+Champs:
+- id
+- organization_id
+- third_party_id
+- review_date
+- reviewer_profile_id nullable
+- assessment_status
+- assessment_score
+- notes nullable
+- next_review_date nullable
+- created_by nullable
+- updated_by nullable
+- created_at
+- updated_at
+
 ## action_plans
 
 Champs:
@@ -224,6 +288,10 @@ Champs:
 - control n..n framework_requirements via control_framework_mappings
 - asset n..n risks via asset_risks
 - asset n..n controls via asset_controls
+- third_party n..n risks via third_party_risks
+- third_party n..n controls via third_party_controls
+- third_party n..n action_plans via third_party_actions
+- third_party 1..n reviews via third_party_reviews
 - framework_requirement 1..1 assessment per organization
 - assessment n..n evidence via framework_requirement_assessment_evidence
 
