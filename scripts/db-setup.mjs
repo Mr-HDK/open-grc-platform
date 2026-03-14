@@ -50,7 +50,10 @@ function readProjectEnv() {
 
 function runSupabase(args) {
   const bin = process.platform === "win32" ? "npx.cmd" : "npx";
-  const result = spawnSync(bin, ["supabase", ...args], { stdio: "inherit" });
+  const result = spawnSync(bin, ["supabase", ...args], {
+    stdio: ["pipe", "inherit", "inherit"],
+    input: "y\n",
+  });
 
   if (typeof result.status === "number" && result.status !== 0) {
     process.exit(result.status);

@@ -23,7 +23,7 @@ type ControlReviewRow = {
     code: string;
     title: string;
   } | null;
-  profiles: {
+  reviewer: {
     email: string;
     full_name: string | null;
   } | null;
@@ -46,7 +46,9 @@ export default async function ControlReviewsPage({
 
   let query = supabase
     .from("control_reviews")
-    .select("id, status, target_date, completed_at, updated_at, controls(id, code, title), profiles(email, full_name)")
+    .select(
+      "id, status, target_date, completed_at, updated_at, controls(id, code, title), reviewer:profiles!control_reviews_reviewer_profile_id_fkey(email, full_name)",
+    )
     .eq("organization_id", profile.organizationId)
     .is("deleted_at", null)
     .order("target_date", { ascending: true });
@@ -165,10 +167,10 @@ export default async function ControlReviewsPage({
                   {review.completed_at ? new Date(review.completed_at).toLocaleDateString() : "-"}
                 </td>
                 <td className="px-4 py-3 text-muted-foreground">
-                  {review.profiles
-                    ? review.profiles.full_name
-                      ? `${review.profiles.full_name} (${review.profiles.email})`
-                      : review.profiles.email
+                  {review.reviewer
+                    ? review.reviewer.full_name
+                      ? `${review.reviewer.full_name} (${review.reviewer.email})`
+                      : review.reviewer.email
                     : "-"}
                 </td>
                 <td className="px-4 py-3 text-muted-foreground">

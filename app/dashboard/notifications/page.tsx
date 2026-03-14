@@ -1,151 +1,245 @@
 import Link from "next/link";
 
-import { FeedbackAlert } from "@/components/ui/feedback-alert";
+import { runReminderSyncAction } from "@/app/dashboard/notifications/actions";
 import { buttonVariants } from "@/components/ui/button";
+import { FeedbackAlert } from "@/components/ui/feedback-alert";
 import { requireSessionProfile } from "@/lib/auth/profile";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { queryDirect } from "@/lib/db/direct";
 import { cn } from "@/lib/utils/cn";
 
-type ActionRow = {
+type NotificationEventRow = {
   id: string;
+  reminder_type: "overdue_action" | "control_review_due" | "risk_acceptance_expiring";
   title: string;
-  priority: "low" | "medium" | "high" | "critical";
-  status: "open" | "in_progress" | "blocked" | "done" | "cancelled";
-  target_date: string;
+  message: string;
+  severity: "info" | "warning" | "critical";
+  due_date: string | null;
+  metadata: Record<string, unknown> | null;
+  last_detected_at: string;
 };
 
-type ControlRow = {
-  id: string;
-  code: string;
-  title: string;
-  next_review_date: string | null;
-  effectiveness_status: string;
+type LatestEventRow = {
+  updated_at: string;
 };
 
-function isOverdueAction(action: ActionRow, todayIso: string) {
-  if (action.status === "done" || action.status === "cancelled") {
-    return false;
+const groupOrder: NotificationEventRow["reminder_type"][] = [
+  "overdue_action",
+  "control_review_due",
+  "risk_acceptance_expiring",
+];
+
+const groupLabels: Record<
+  NotificationEventRow["reminder_type"],
+  { title: string; description: string; empty: string }
+> = {
+  overdue_action: {
+    title: "Overdue actions",
+    description: "Action plans that missed their target date and still require remediation.",
+    empty: "No overdue actions in the synced queue.",
+  },
+  control_review_due: {
+    title: "Control reviews due soon",
+    description: "Controls with a review date within the 30-day reminder window.",
+    empty: "No due-soon control reviews in the synced queue.",
+  },
+  risk_acceptance_expiring: {
+    title: "Risk acceptances expiring soon",
+    description: "Accepted risks that are approaching expiration or already expired.",
+    empty: "No expiring risk acceptances in the synced queue.",
+  },
+};
+
+const severityClasses: Record<NotificationEventRow["severity"], string> = {
+  info: "bg-slate-100 text-slate-700",
+  warning: "bg-amber-100 text-amber-800",
+  critical: "bg-rose-100 text-rose-800",
+};
+
+const severityRank: Record<NotificationEventRow["severity"], number> = {
+  critical: 3,
+  warning: 2,
+  info: 1,
+};
+
+function compareEvents(left: NotificationEventRow, right: NotificationEventRow) {
+  const severityDelta = severityRank[right.severity] - severityRank[left.severity];
+
+  if (severityDelta !== 0) {
+    return severityDelta;
   }
 
-  return action.target_date < todayIso;
+  const dueDelta = (left.due_date ?? "9999-12-31").localeCompare(right.due_date ?? "9999-12-31");
+  if (dueDelta !== 0) {
+    return dueDelta;
+  }
+
+  return left.title.localeCompare(right.title);
 }
 
-function isControlReviewDueSoon(control: ControlRow, limitIso: string) {
-  if (!control.next_review_date) {
-    return false;
-  }
-
-  return control.next_review_date <= limitIso;
+function eventPath(metadata: Record<string, unknown> | null) {
+  return metadata && typeof metadata.path === "string" ? metadata.path : null;
 }
 
 export default async function NotificationsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string }>;
+  searchParams: Promise<{ error?: string; success?: string }>;
 }) {
-  await requireSessionProfile("manager");
+  const profile = await requireSessionProfile("manager");
   const params = await searchParams;
-  const supabase = await createSupabaseServerClient();
+  let errorMessage: string | null = null;
+  let events: NotificationEventRow[] = [];
+  let latestUpdate: LatestEventRow | null = null;
 
-  const [{ data: actionPlans }, { data: controls }] = await Promise.all([
-    supabase
-      .from("action_plans")
-      .select("id, title, priority, status, target_date")
-      .is("deleted_at", null)
-      .returns<ActionRow[]>(),
-    supabase
-      .from("controls")
-      .select("id, code, title, next_review_date, effectiveness_status")
-      .is("deleted_at", null)
-      .returns<ControlRow[]>(),
-  ]);
+  try {
+    const [eventsResult, latestResult] = await Promise.all([
+      queryDirect<NotificationEventRow>(
+        `select
+          id,
+          reminder_type,
+          title,
+          message,
+          severity,
+          due_date::text as due_date,
+          metadata,
+          last_detected_at::text as last_detected_at
+        from public.notification_events
+        where organization_id = $1::uuid
+          and resolved_at is null
+        order by last_detected_at desc`,
+        [profile.organizationId],
+      ),
+      queryDirect<LatestEventRow>(
+        `select updated_at::text as updated_at
+        from public.notification_events
+        where organization_id = $1::uuid
+        order by updated_at desc
+        limit 1`,
+        [profile.organizationId],
+      ),
+    ]);
 
-  const todayIso = new Date().toISOString().slice(0, 10);
-  const in30DaysIso = new Date(Date.now() + 30 * 24 * 3600 * 1000).toISOString().slice(0, 10);
+    events = eventsResult.rows;
+    latestUpdate = latestResult.rows[0] ?? null;
+  } catch (error) {
+    errorMessage = (error as Error).message;
+  }
 
-  const overdueActions = (actionPlans ?? [])
-    .filter((action) => isOverdueAction(action, todayIso))
-    .sort((left, right) => left.target_date.localeCompare(right.target_date));
+  const sortedEvents = events.sort(compareEvents);
+  const countByType = new Map<NotificationEventRow["reminder_type"], number>();
 
-  const controlsDueSoon = (controls ?? [])
-    .filter((control) => isControlReviewDueSoon(control, in30DaysIso))
-    .sort((left, right) => (left.next_review_date ?? "").localeCompare(right.next_review_date ?? ""));
+  for (const type of groupOrder) {
+    countByType.set(type, sortedEvents.filter((event) => event.reminder_type === type).length);
+  }
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Notifications</h1>
-        <p className="text-sm text-muted-foreground">
-          Reminders for overdue actions and upcoming control reviews.
-        </p>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight">Notifications</h1>
+          <p className="text-sm text-muted-foreground">
+            Scheduler-backed reminder queue for overdue actions, due control reviews, and expiring
+            risk acceptances.
+          </p>
+          {latestUpdate?.updated_at ? (
+            <p className="mt-2 text-xs text-muted-foreground">
+              Latest reminder update: {new Date(latestUpdate.updated_at).toLocaleString()}
+            </p>
+          ) : null}
+        </div>
+
+        <form action={runReminderSyncAction}>
+          <button type="submit" className={buttonVariants({ variant: "outline" })}>
+            Run reminder sync
+          </button>
+        </form>
       </div>
 
       {params.error ? <FeedbackAlert message={decodeURIComponent(params.error)} /> : null}
+      {params.success ? (
+        <FeedbackAlert
+          variant="success"
+          title="Reminder sync complete."
+          message={decodeURIComponent(params.success)}
+        />
+      ) : null}
+      {errorMessage ? <FeedbackAlert message={errorMessage} /> : null}
 
-      <section className="rounded-xl border bg-card p-6">
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <h2 className="text-lg font-semibold tracking-tight">Overdue actions</h2>
-          <Link
-            href="/dashboard/actions?status=open"
-            className={cn(buttonVariants({ variant: "outline" }), "text-xs")}
-          >
-            View action plans
-          </Link>
-        </div>
-
-        {overdueActions.length === 0 ? (
-          <p className="mt-3 text-sm text-muted-foreground">No overdue actions right now.</p>
-        ) : (
-          <ul className="mt-4 space-y-3">
-            {overdueActions.map((action) => (
-              <li key={action.id} className="rounded-lg border p-3">
-                <Link
-                  href={`/dashboard/actions/${action.id}`}
-                  className="text-sm font-medium hover:underline"
-                >
-                  {action.title}
-                </Link>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  {action.priority} priority | {action.status} | target {action.target_date}
-                </p>
-              </li>
-            ))}
-          </ul>
-        )}
+      <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <article className="rounded-xl border bg-card p-4">
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            Active reminders
+          </p>
+          <p className="mt-2 text-3xl font-semibold">{sortedEvents.length}</p>
+          <p className="mt-1 text-xs text-muted-foreground">All unresolved reminder events.</p>
+        </article>
+        {groupOrder.map((type) => (
+          <article key={type} className="rounded-xl border bg-card p-4">
+            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              {groupLabels[type].title}
+            </p>
+            <p className="mt-2 text-3xl font-semibold">{countByType.get(type) ?? 0}</p>
+            <p className="mt-1 text-xs text-muted-foreground">{groupLabels[type].description}</p>
+          </article>
+        ))}
       </section>
 
-      <section className="rounded-xl border bg-card p-6">
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <h2 className="text-lg font-semibold tracking-tight">Control reviews due soon</h2>
-          <Link
-            href="/dashboard/controls"
-            className={cn(buttonVariants({ variant: "outline" }), "text-xs")}
-          >
-            View controls
-          </Link>
-        </div>
-        <p className="mt-1 text-xs text-muted-foreground">Next review date within 30 days.</p>
+      {groupOrder.map((type) => {
+        const items = sortedEvents.filter((event) => event.reminder_type === type);
+        const config = groupLabels[type];
 
-        {controlsDueSoon.length === 0 ? (
-          <p className="mt-3 text-sm text-muted-foreground">No upcoming reviews in the next 30 days.</p>
-        ) : (
-          <ul className="mt-4 space-y-3">
-            {controlsDueSoon.map((control) => (
-              <li key={control.id} className="rounded-lg border p-3">
-                <Link
-                  href={`/dashboard/controls/${control.id}`}
-                  className="text-sm font-medium hover:underline"
-                >
-                  {control.code} - {control.title}
-                </Link>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  review {control.next_review_date ?? "-"} | {control.effectiveness_status}
-                </p>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
+        return (
+          <section key={type} className="rounded-xl border bg-card p-6">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div>
+                <h2 className="text-lg font-semibold tracking-tight">{config.title}</h2>
+                <p className="mt-1 text-xs text-muted-foreground">{config.description}</p>
+              </div>
+              <span className="text-xs font-medium text-muted-foreground">{items.length} active</span>
+            </div>
+
+            {items.length === 0 ? (
+              <p className="mt-4 text-sm text-muted-foreground">{config.empty}</p>
+            ) : (
+              <ul className="mt-4 space-y-3">
+                {items.map((event) => {
+                  const href = eventPath(event.metadata);
+
+                  return (
+                    <li key={event.id} className="rounded-lg border p-4">
+                      <div className="flex flex-wrap items-start justify-between gap-3">
+                        <div>
+                          {href ? (
+                            <Link href={href} className="text-sm font-medium hover:underline">
+                              {event.title}
+                            </Link>
+                          ) : (
+                            <p className="text-sm font-medium">{event.title}</p>
+                          )}
+                          <p className="mt-2 text-sm text-muted-foreground">{event.message}</p>
+                        </div>
+                        <span
+                          className={cn(
+                            "inline-flex rounded-full px-2 py-1 text-xs font-semibold uppercase tracking-wide",
+                            severityClasses[event.severity],
+                          )}
+                        >
+                          {event.severity}
+                        </span>
+                      </div>
+
+                      <div className="mt-3 flex flex-wrap gap-4 text-xs text-muted-foreground">
+                        <span>Due {event.due_date ?? "-"}</span>
+                        <span>Last detected {new Date(event.last_detected_at).toLocaleString()}</span>
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </section>
+        );
+      })}
     </div>
   );
 }

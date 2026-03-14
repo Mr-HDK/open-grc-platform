@@ -62,9 +62,9 @@ La base actuelle couvre:
 - dashboard resume
 - audit log minimal
 - admin settings (roles, invite, deactivate, transfer ownership)
-- imports/exports simples (risques/controles)
+- imports/exports simples (risques/controles) + reporting packs imprimables
 - collaboration legere (commentaires, activity trail)
-- notifications utiles (actions en retard, controles a revoir)
+- notifications utiles (actions en retard, controles a revoir) avec sync planifiable
 - registre incidents (statuts simples, liens vers risques/actions)
 - revues periodiques des controles (statut + date cible)
 - campagnes de test des controles + constats (findings)
@@ -83,11 +83,11 @@ La phase courante vise a etendre la base avec les chantiers suivants:
 ### Priorite 2
 - bibliotheques de risques et de controles
 - imports simples
-- exports de reporting et audit
+- exports de reporting et packs management / audit
 
 ### Priorite 3
 - commentaires et activity trail plus riche
-- notifications utiles et proportionnees
+- notifications utiles et proportionnees avec mecanisme simple de sync
 - revues periodiques de controles
 
 ### Priorite 4

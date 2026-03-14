@@ -214,7 +214,7 @@ Attendus:
 - evaluation requirement-level (compliant, partial, gap, not_applicable)
 - justification obligatoire pour partial/gap/not_applicable
 - possibilite de lier des preuves existantes a chaque evaluation
-- vue consolidée par framework (taux de couverture, taux de gap)
+- vue consolidee par framework (taux de couverture, taux de gap)
 - permissions coherentes avec roles existants
 - validations serveur strictes
 - tests minimaux
@@ -283,4 +283,210 @@ Attendus:
 - README mis a jour
 
 Contraintes:
+- pas de moteur documentaire avance
+- pas de signature electronique complexe
+- reste pragmatique et ne change pas l'architecture globale
+```
+
+---
+
+## Prompt 25 - Auditable Entity Model & Org Scoping
+
+```text
+Lis les docs du projet puis implemente uniquement un modele d'entites auditables simple et reutilisable.
+
+Attendus:
+- entite `auditable_entities` ou equivalent avec au minimum: nom, type, owner, statut, parent optionnel, description
+- types simples tels que: business_unit, process, application, product, vendor, legal_entity, other
+- possibilite de relier une entite auditable aux risques, controles, actifs et tiers existants sans table generique trop abstraite
+- pages liste / creation / detail / edition
+- filtres utiles: type, owner, statut, parent
+- affichage des entites auditables liees sur les fiches risque / controle / actif / tiers quand pertinent
+- permissions coherentes avec les roles existants
+- validations serveur strictes + RLS coherente
+- seed minimal pour demo si utile
+- tests minimaux
+- README et docs mis a jour
+
+Contraintes:
+- pas de multi-entite enterprise complexe
+- pas de moteur de taxonomie configurable illimite
+- reste lisible et compatible avec les modules existants
+```
+
+---
+
+## Prompt 26 - Audit Management Core
+
+```text
+Lis les docs du projet puis implemente uniquement un premier module d'audit interne exploitable.
+
+Attendus:
+- tables simples pour `audit_plans`, `audit_plan_items`, `audit_engagements` et `audit_workpapers` ou equivalent proche
+- plan annuel ou semestriel avec items relies a une entite auditable, un risque, ou un sujet libre si necessaire
+- engagement d'audit avec scope, objectifs, lead auditor, dates planifiees, dates reelles, statut
+- workpapers simples avec titre, procedure, conclusion, reviewer optionnel, lien vers preuves existantes
+- detail d'engagement avec sections: scope, workpapers, constats/finding lies, actions de remediation
+- reutilisation des `findings`, `actions` et `evidence` existants plutot que duplication d'un sous-systeme parallele
+- vue liste pour managers et auditeurs internes avec filtres par statut, owner, periode
+- permissions coherentes (manager/admin pour pilotage, contributor pour execution si pertinent, viewer en lecture)
+- validations serveur strictes
+- tests minimaux
+- README et docs mis a jour
+
+Contraintes:
+- pas de GED avancee
+- pas de signature electronique
+- pas de workflow QA trop riche au premier lot
+- reste monolithique et pragmatique
+```
+
+---
+
+## Prompt 27 - Unified Issues, Exceptions & Remediation
+
+```text
+Lis les docs du projet puis implemente uniquement un registre unifie des issues et exceptions.
+
+Attendus:
+- entite `issues` ou equivalent couvrant au minimum: type, severite, statut, owner, due date, root cause, management response, resolution notes
+- support explicite de plusieurs types utiles: audit_finding, control_failure, policy_exception, vendor_issue, risk_exception, incident_follow_up
+- possibilite de relier une issue a un risque, controle, action, incident, policy, third_party, audit engagement ou autre entite existante sans casser les modules actuels
+- vue liste avec filtres: type, statut, severite, overdue, owner
+- page detail lisible avec historique, liens contextuels et remediation
+- aging simple et indicateurs de retard
+- compatibilite progressive avec les modules `findings` et `risk_acceptances` existants sans migration massive obligatoire au premier lot
+- permissions et validations serveur coherentes
+- tests minimaux
+- README et docs mis a jour
+
+Contraintes:
+- ne reecris pas tout le projet pour unifier l'existant en une seule fois
+- pas de moteur de workflow configurable generique
+- prefere une couche de convergence simple et progressive
+```
+
+---
+
+## Prompt 28 - Policy Governance v2
+
+```text
+Lis les docs du projet puis implemente uniquement une version 2 de gouvernance documentaire pour les policies.
+
+Attendus:
+- enrichissement du module policies avec cycle simple: draft, in_review, active, archived
+- approbations simples par manager/admin avant publication
+- ciblage d'audience simple pour les attestations: par role, profils explicites, ou groupe minimal seed-driven
+- campagnes d'attestation avec due date, statut pending/acknowledged/overdue, et suivi global
+- rappels visuels clairs pour policies a revoir et attestations en retard
+- comparaison simple entre version courante et version precedente sur les metadonnees et le contenu
+- gestion minimale des exceptions / waivers de policy avec justification, expiration, approbateur
+- detail policy enrichi avec couverture, exceptions ouvertes, prochaines revues
+- validations serveur strictes + permissions coherentes
+- tests minimaux
+- README et docs mis a jour
+
+Contraintes:
+- pas de moteur documentaire avance
+- pas de signature electronique complexe
+- pas de constructeur de workflow configurable
+- reste simple et exploitable par une petite equipe
+```
+
+---
+
+## Prompt 29 - Third-Party Risk Management v2
+
+```text
+Lis les docs du projet puis implemente uniquement une version 2 plus operationnelle du module third-party.
+
+Attendus:
+- enrichissement du registre fournisseurs avec tiering / inherent risk, contract owner, renewal date, onboarding status
+- questionnaires simples de revue fournisseur avec questions seed-driven, reponses, score et conclusion
+- checklist de demandes documentaires ou preuves pour un fournisseur avec statuts et due dates
+- periodic reassessment planifiee avec prochaine revue calculee ou guidee
+- liens vers risques, controles, actions et issues existants
+- detail fournisseur montrant clairement: posture actuelle, historique des reviews, docs demandes, renouvellement, issues ouvertes
+- filtres utiles: tier, review status, renewal horizon, criticality, owner
+- validations serveur strictes + permissions coherentes
+- tests minimaux
+- README et docs mis a jour
+
+Contraintes:
+- pas de portail fournisseur externe complexe au premier lot
+- pas de monitoring externe automatise au premier lot
+- pas de questionnaire builder ultra configurable
+```
+
+---
+
+## Prompt 30 - Control Assurance & Evidence Orchestration
+
+```text
+Lis les docs du projet puis implemente uniquement une couche plus operationnelle d'assurance des controles.
+
+Attendus:
+- campagnes ou cycles simples d'attestation de controle pour les owners
+- demandes de preuves liees aux controles avec due date, statut, owner, commentaire de revue
+- possibilite de lier une preuve uploadee existante ou nouvelle a une demande de preuve
+- historique d'assurance par controle: attestations, tests, preuves demandees, constats lies
+- vue liste pour managers: controles en retard, attestations manquantes, preuves manquantes, controles sains vs a risque
+- lien fort avec les modules existants `control_reviews`, `control_tests`, `findings` et `evidence`
+- validations serveur strictes + permissions coherentes
+- tests minimaux
+- README et docs mis a jour
+
+Contraintes:
+- pas de moteur de workflow generique
+- pas de collecte automatique depuis integrations externes au premier lot
+- reste centre sur l'operating model des controle owners
+```
+
+---
+
+## Prompt 31 - Executive & Committee Reporting Packs
+
+```text
+Lis les docs du projet puis implemente uniquement des reporting packs management / audit committee utiles.
+
+Attendus:
+- une page reporting enrichie avec vues sauvegardables ou presets pour management, audit committee, compliance review
+- sections cles basees sur les vraies donnees: top risks, issues ouvertes, actions overdue, health des controles, gaps framework, vendors critiques, couverture des attestations policy
+- si le module audit existe, ajouter aussi l'etat du plan d'audit et des engagements
+- export lisible au minimum en HTML imprimable et CSV/JSON pour les jeux de donnees sous-jacents
+- periode et filtres simples: owner, type, severite, statut, horizon de dates
+- mise en page sobre et board-ready, sans chiffres mockes
+- validations serveur strictes + permissions coherentes
+- tests minimaux
+- README et docs mis a jour
+
+Contraintes:
+- pas de moteur BI
+- pas de slide builder complexe
+- pas de PDF riche si cela ajoute trop de plomberie; prefere une vue imprimable propre
+```
+
+---
+
+## Prompt 32 - RCSA (Risk Control Self-Assessment)
+
+```text
+Lis les docs du projet puis implemente uniquement une premiere version exploitable de RCSA.
+
+Attendus:
+- tables simples pour `rcsa_campaigns`, `rcsa_responses` et un jeu de questions seed-driven ou equivalent
+- campagne RCSA liee a une entite auditable, un risque, un controle, ou un owner selon le modele existant
+- questionnaire simple sur design adequacy, operating effectiveness, incidents recents, preuves disponibles, actions necessaires
+- score de synthese simple avec resultat exploitable: satisfactory, needs_attention, critical ou equivalent
+- possibilite de creer ou suggerer une action / issue a partir d'une reponse faible
+- vue liste des campagnes, detail d'une campagne, soumission de reponses et revue manager
+- filtres utiles: statut, owner, periode, score
+- validations serveur strictes + permissions coherentes
+- tests minimaux
+- README et docs mis a jour
+
+Contraintes:
+- pas de survey builder illimite
+- pas de logique conditionnelle complexe au premier lot
+- garde un questionnaire simple, seed-driven et lisible
 ```

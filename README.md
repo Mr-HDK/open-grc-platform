@@ -81,14 +81,20 @@ Phase 1 foundation is implemented. This repository is no longer managed as a gre
   - role reassignment flow with server-side validation
   - invite, deactivate, and ownership transfer flows
 - Reporting module:
-  - CSV/JSON exports for risks and controls
+  - preset report packs for management, audit committee, and compliance review
+  - printable reporting view for browser print / PDF export
+  - JSON pack export for filtered report presets
+  - CSV/JSON exports for risks, controls, action plans, and findings
   - CSV/JSON imports for risks and controls with validation
 - Collaboration module:
   - comments on risks, controls, and action plans
   - activity visibility alongside audit history
 - Notifications module:
+  - scheduler-backed reminder queue (`notification_events`)
+  - manual reminder sync from the UI
   - overdue action reminders
   - control review reminders
+  - risk acceptance expiration reminders
 - Incident Register module:
   - incident CRUD with status tracking
   - optional links to risks and action plans
@@ -198,6 +204,7 @@ Notes:
 
 - `SUPABASE_SERVICE_ROLE_KEY` is required for `npm run db:setup`.
 - `DIRECT_URL` must point to the same Supabase project as `NEXT_PUBLIC_SUPABASE_URL`.
+- `DIRECT_URL` is also used by the reminder sync runner and the notifications queue reads.
 
 Optional E2E credentials:
 
@@ -261,6 +268,7 @@ Default seeded credentials (change before production use):
 npm run lint
 npm run typecheck
 npm run format:check
+npm run reminders:run
 npm run test:e2e
 npm run test:e2e:parallel
 npm run test:e2e:ci
@@ -304,6 +312,7 @@ The workflow runs:
 - Audit log events are best-effort and do not block core create/update/archive operations.
 - Default E2E run is serial (`npm run test:e2e`) for deterministic CI/dev baselines.
 - `npm run test:e2e:parallel` is available for faster local stress runs.
+- Schedule `npm run reminders:run` with your preferred scheduler (Task Scheduler, cron, GitHub Actions, etc.) to keep reminder events fresh.
 - If login redirects with `profile_missing`/`organization_missing`, re-run `npm run db:setup` and sign in again.
 
 ## Notes
@@ -320,6 +329,6 @@ The workflow runs:
 ## Next-phase roadmap
 
 - Expand admin lifecycle tooling (invite, deactivate, ownership transfer).
-- Add audit pack exports and stronger reporting for management reviews.
-- Increase E2E coverage for audit log entries, incidents, and control reviews.
-- Introduce a lightweight background scheduler for reminders and overdue items.
+- Expand reporting packs with richer filters and additional committee views.
+- Increase E2E coverage for policy governance, third-party review cadence, and report-pack exports.
+- Continue the next feature backlog with auditable entities and audit management core.
