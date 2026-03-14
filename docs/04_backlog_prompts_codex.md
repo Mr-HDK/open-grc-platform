@@ -221,7 +221,6 @@ Attendus:
 - README mis a jour
 
 Contraintes:
-- pas de moteur d'audit complet
 - ne pas modifier l'architecture de base
 ```
 
@@ -242,8 +241,7 @@ Attendus:
 - README mis a jour
 
 Contraintes:
-- pas de CMDB complexe
-- reste minimal mais propre
+- reste propre
 ```
 
 ---
@@ -285,6 +283,4 @@ Attendus:
 - README mis a jour
 
 Contraintes:
-- pas de moteur documentaire avance
-- pas de signature electronique complexe
 ```

@@ -110,6 +110,11 @@ Phase 1 foundation is implemented. This repository is no longer managed as a gre
   - optional links to risk control/action scope
   - status lifecycle: active, expired, revoked
   - expiration reminders and revocation flow
+- Policy & Attestation module:
+  - policy register with title, version, status, effective date, and owner
+  - draft/edit/publish/archive lifecycle for policy versions
+  - user acknowledgements with `acknowledged_at` tracking
+  - attestation coverage on policy detail (confirmed vs missing users)
 - SQL migrations and seed data
 - Playwright E2E smoke test + optional risk/control/action/evidence/framework/libraries/settings tests
 
@@ -137,6 +142,7 @@ app/
   (auth)/login/
   dashboard/
     assets/
+    policies/
     third-parties/
     risks/
     controls/
@@ -148,6 +154,7 @@ app/
 components/
   assets/
   third-parties/
+  policies/
   audit/
   layout/
   risks/
@@ -304,6 +311,7 @@ The workflow runs:
 - `tests/e2e/risks.create.spec.ts`, `tests/e2e/controls.create.spec.ts`, `tests/e2e/actions.create.spec.ts`, `tests/e2e/evidence.create.spec.ts`, `tests/e2e/frameworks.mapping.spec.ts`, `tests/e2e/libraries.bundles.spec.ts`, and `tests/e2e/settings.roles.spec.ts` skip automatically if required credentials are not set.
 - `tests/e2e/control-tests.findings.spec.ts` validates failed control test -> finding creation -> retest closure.
 - `tests/e2e/risk-acceptances.lifecycle.spec.ts` validates manager create + revoke lifecycle.
+- `tests/e2e/policies.attestation.spec.ts` validates policy create -> publish -> acknowledge flow.
 - `frameworks.mapping.spec.ts` requires admin credentials and at least one seeded control + framework requirement.
 - Framework mappings page is admin-only by design.
 - Libraries page is admin-only by design.

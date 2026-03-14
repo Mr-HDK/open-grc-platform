@@ -174,6 +174,34 @@ Champs:
 - created_at
 - updated_at
 
+## policies
+
+Champs:
+- id
+- organization_id
+- title
+- version
+- status (draft, active, archived)
+- effective_date
+- owner_profile_id nullable
+- content nullable
+- published_at nullable
+- created_by nullable
+- updated_by nullable
+- created_at
+- updated_at
+- deleted_at
+
+## policy_attestations
+
+Champs:
+- id
+- organization_id
+- policy_id
+- profile_id
+- acknowledged_at
+- created_at
+
 ## action_plans
 
 Champs:
@@ -292,6 +320,8 @@ Champs:
 - third_party n..n controls via third_party_controls
 - third_party n..n action_plans via third_party_actions
 - third_party 1..n reviews via third_party_reviews
+- policy 1..n attestations via policy_attestations
+- profile 1..n policy_attestations
 - framework_requirement 1..1 assessment per organization
 - assessment n..n evidence via framework_requirement_assessment_evidence
 
@@ -334,6 +364,11 @@ Champs:
 - medium
 - high
 - critical
+
+### policy_status
+- draft
+- active
+- archived
 
 ## Règles importantes
 

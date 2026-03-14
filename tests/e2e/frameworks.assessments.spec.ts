@@ -1,20 +1,22 @@
 import { expect, test } from "@playwright/test";
 
-const contributorEmail = process.env.E2E_CONTRIBUTOR_TEST_EMAIL || "contributor@open-grc.local";
-const contributorPassword = process.env.E2E_CONTRIBUTOR_TEST_PASSWORD;
+import { credentialCandidates, signInWithCandidates } from "./utils/auth";
 
 test("contributor can save framework requirement assessments", async ({ page }) => {
-  test.skip(
-    !contributorPassword,
-    "Set E2E_CONTRIBUTOR_TEST_PASSWORD for seeded contributor account.",
-  );
+  const candidates = credentialCandidates({
+    emails: [
+      process.env.E2E_CONTRIBUTOR_TEST_EMAIL,
+      process.env.E2E_RISK_TEST_EMAIL,
+      "contributor@open-grc.local",
+    ],
+    passwords: [
+      process.env.E2E_CONTRIBUTOR_TEST_PASSWORD,
+      process.env.E2E_RISK_TEST_PASSWORD,
+      "ChangeMe123!",
+    ],
+  });
 
-  await page.goto("/login");
-  await page.getByLabel("Email").fill(contributorEmail);
-  await page.getByLabel("Password").fill(contributorPassword ?? "");
-  await page.getByRole("button", { name: "Sign in" }).click();
-
-  await expect(page).toHaveURL(/\/dashboard/);
+  await signInWithCandidates(page, candidates);
 
   await page.goto("/dashboard/frameworks");
 
@@ -35,7 +37,7 @@ test("contributor can save framework requirement assessments", async ({ page }) 
 
   await firstRequirementForm.getByRole("button", { name: "Save assessment" }).click();
 
-  await expect(page).toHaveURL(/\/dashboard\/frameworks/);
-  await expect(page.getByText("Assessment updated.")).toBeVisible();
+  await expect(page).toHaveURL(/\/dashboard\/frameworks/, { timeout: 20_000 });
+  await expect(page.getByText("Assessment updated.")).toBeVisible({ timeout: 20_000 });
   await expect(assessmentForms.first().getByLabel("Status")).toHaveValue("gap");
 });

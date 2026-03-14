@@ -12,7 +12,9 @@ export type AuditEntityType =
   | "framework_requirement_assessment"
   | "asset"
   | "third_party"
-  | "third_party_review";
+  | "third_party_review"
+  | "policy"
+  | "policy_attestation";
 export type AuditAction = "create" | "update" | "soft_delete";
 
 export type AuditEntry = {

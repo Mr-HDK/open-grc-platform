@@ -57,6 +57,7 @@ Pour un projet Codex-friendly, il faut une architecture:
 app/
   (auth)/
   dashboard/
+  policies/
   risks/
   controls/
   actions/
@@ -66,6 +67,7 @@ app/
 components/
   ui/
   layout/
+  policies/
   risks/
   controls/
   actions/
@@ -122,6 +124,8 @@ Regles de base:
 - third_party_controls
 - third_party_actions
 - third_party_reviews
+- policies
+- policy_attestations
 - action_plans
 - evidence
 - frameworks

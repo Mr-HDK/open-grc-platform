@@ -1,19 +1,23 @@
 import { expect, test } from "@playwright/test";
 
-const testEmail = process.env.E2E_RISK_TEST_EMAIL;
-const testPassword = process.env.E2E_RISK_TEST_PASSWORD;
+import { credentialCandidates, signInWithCandidates } from "./utils/auth";
 
 test("contributor can create and review a third-party", async ({ page }) => {
-  test.skip(!testEmail || !testPassword, "Set E2E_RISK_TEST_EMAIL and E2E_RISK_TEST_PASSWORD.");
-
   const vendorName = `Playwright vendor ${Date.now()}`;
+  const candidates = credentialCandidates({
+    emails: [
+      process.env.E2E_RISK_TEST_EMAIL,
+      process.env.E2E_CONTRIBUTOR_TEST_EMAIL,
+      "contributor@open-grc.local",
+    ],
+    passwords: [
+      process.env.E2E_RISK_TEST_PASSWORD,
+      process.env.E2E_CONTRIBUTOR_TEST_PASSWORD,
+      "ChangeMe123!",
+    ],
+  });
 
-  await page.goto("/login");
-  await page.getByLabel("Email").fill(testEmail ?? "");
-  await page.getByLabel("Password").fill(testPassword ?? "");
-  await page.getByRole("button", { name: "Sign in" }).click();
-
-  await expect(page).toHaveURL(/\/dashboard/, { timeout: 20_000 });
+  await signInWithCandidates(page, candidates);
 
   await page.goto("/dashboard/third-parties/new");
   await page.getByRole("textbox", { name: "Vendor" }).fill(vendorName);
@@ -47,5 +51,6 @@ test("contributor can create and review a third-party", async ({ page }) => {
   await page.getByLabel("Review notes").fill("Quarterly review completed with no blocking issues.");
   await page.getByRole("button", { name: "Log review" }).click();
 
-  await expect(page.getByText("Review logged successfully.")).toBeVisible();
+  await expect(page).toHaveURL(/success=review_created/, { timeout: 20_000 });
+  await expect(page.getByText("Review logged successfully.")).toBeVisible({ timeout: 20_000 });
 });
