@@ -325,8 +325,9 @@ Champs:
 - organization_id
 - title
 - version
-- status (draft, active, archived)
+- status (draft, in_review, active, archived)
 - effective_date
+- next_review_date nullable
 - owner_profile_id nullable
 - content nullable
 - published_at nullable
@@ -345,6 +346,88 @@ Champs:
 - profile_id
 - acknowledged_at
 - created_at
+
+## policy_approvals
+
+Champs:
+- id
+- organization_id
+- policy_id
+- approver_profile_id
+- decision (approved, rejected)
+- comment nullable
+- created_at
+
+## policy_audience_groups
+
+Champs:
+- id
+- organization_id
+- audience_key
+- name
+- description nullable
+- created_by nullable
+- updated_by nullable
+- created_at
+- updated_at
+- deleted_at
+
+## policy_audience_group_members
+
+Champs:
+- group_id
+- profile_id
+- created_at
+
+## policy_attestation_campaigns
+
+Champs:
+- id
+- organization_id
+- policy_id
+- name
+- due_date
+- audience_type (role, profiles, group)
+- audience_role nullable
+- audience_group_id nullable
+- created_by nullable
+- updated_by nullable
+- created_at
+- updated_at
+- deleted_at
+
+## policy_attestation_targets
+
+Champs:
+- id
+- organization_id
+- policy_id
+- campaign_id
+- profile_id
+- due_date
+- status (pending, acknowledged, overdue)
+- acknowledged_at nullable
+- created_at
+- updated_at
+
+## policy_exceptions
+
+Champs:
+- id
+- organization_id
+- policy_id
+- profile_id nullable
+- justification
+- expiration_date
+- approved_by_profile_id
+- status (active, expired, revoked)
+- revoked_at nullable
+- revoked_by_profile_id nullable
+- created_by nullable
+- updated_by nullable
+- created_at
+- updated_at
+- deleted_at
 
 ## issues
 
@@ -511,6 +594,11 @@ Champs:
 - third_party 1..n reviews via third_party_reviews
 - policy 1..n attestations via policy_attestations
 - profile 1..n policy_attestations
+- policy 1..n approvals via policy_approvals
+- policy 1..n attestation campaigns via policy_attestation_campaigns
+- campaign 1..n targets via policy_attestation_targets
+- policy_audience_group 1..n members via policy_audience_group_members
+- policy 1..n waivers via policy_exceptions
 - finding 1..n issues via source_finding_id
 - risk_acceptance 1..n issues via source_risk_acceptance_id
 - issue 0..1 risk via risk_id
@@ -565,8 +653,28 @@ Champs:
 
 ### policy_status
 - draft
+- in_review
 - active
 - archived
+
+### policy_approval_decision
+- approved
+- rejected
+
+### policy_campaign_audience_type
+- role
+- profiles
+- group
+
+### policy_attestation_status
+- pending
+- acknowledged
+- overdue
+
+### policy_exception_status
+- active
+- expired
+- revoked
 
 ### issue_type
 - audit_finding

@@ -10,6 +10,7 @@ type PolicyRow = {
   title: string;
   version: string;
   effective_date: string;
+  next_review_date: string | null;
   owner_profile_id: string | null;
   content: string | null;
 };
@@ -24,7 +25,7 @@ async function getPolicy(policyId: string, organizationId: string) {
   const supabase = await createSupabaseServerClient();
   const { data } = await supabase
     .from("policies")
-    .select("id, title, version, effective_date, owner_profile_id, content")
+    .select("id, title, version, effective_date, next_review_date, owner_profile_id, content")
     .eq("id", policyId)
     .eq("organization_id", organizationId)
     .is("deleted_at", null)
@@ -78,6 +79,7 @@ export default async function EditPolicyPage({
           title: policy.title,
           version: policy.version,
           effectiveDate: policy.effective_date,
+          nextReviewDate: policy.next_review_date ?? policy.effective_date,
           ownerProfileId: policy.owner_profile_id,
           content: policy.content,
         }}

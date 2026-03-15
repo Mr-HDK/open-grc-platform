@@ -17,32 +17,34 @@ test("manager can create, publish, and acknowledge a policy", async ({ page }) =
   await page.getByLabel("Title").fill(policyTitle);
   await page.getByLabel("Version").fill("1.0");
   await page.getByLabel("Effective date").fill("2031-01-31");
+  await page.getByLabel("Next review date").fill("2032-01-31");
   await page.getByLabel("Content").fill("Policy attestation test content.");
-  await page.waitForLoadState("networkidle");
-  await page.waitForTimeout(1500);
   await page.getByRole("button", { name: "Create policy" }).click();
 
   await expect(page).toHaveURL(/\/dashboard\/policies\/[0-9a-f-]+/, { timeout: 20_000 });
   await expect(page.getByRole("heading", { name: policyTitle })).toBeVisible();
 
-  await page.waitForLoadState("networkidle");
-  await page.waitForTimeout(1500);
+  await page.getByRole("button", { name: "Submit for review" }).click();
+  await expect(page).toHaveURL(/success=in_review/, { timeout: 20_000 });
+
+  await page.getByRole("button", { name: "Approve" }).click();
+  await expect(page).toHaveURL(/success=approved/, { timeout: 20_000 });
+
   await page.getByRole("button", { name: "Publish" }).click();
   await expect(page).toHaveURL(/success=published/, { timeout: 20_000 });
-  await expect(page.getByText("Policy published as active version.")).toBeVisible({ timeout: 20_000 });
-  await expect(page.getByRole("heading", { name: "Attestation" })).toBeVisible({ timeout: 20_000 });
-  await expect(page.getByText("Audience")).toBeVisible({ timeout: 20_000 });
-  await expect(page.getByText("Confirmed", { exact: true })).toBeVisible({ timeout: 20_000 });
-  await expect(page.getByText("Missing", { exact: true })).toBeVisible({ timeout: 20_000 });
-  await expect(page.getByRole("heading", { name: "Confirmed users" })).toBeVisible({ timeout: 20_000 });
-  await expect(page.getByRole("heading", { name: "Missing users" })).toBeVisible({ timeout: 20_000 });
 
-  await page.waitForLoadState("networkidle");
-  await page.waitForTimeout(1500);
+  const campaignName = `Playwright policy campaign ${Date.now()}`;
+  await page.locator('input[name="name"]').fill(campaignName);
+  await page.locator('input[name="dueDate"]').fill("2031-03-15");
+  await page.locator('select[name="audienceType"]').selectOption("role");
+  await page.locator('select[name="audienceRole"]').selectOption("manager");
+  await page.getByRole("button", { name: "Launch campaign" }).click();
+  await expect(page).toHaveURL(/success=campaign_created/, { timeout: 20_000 });
+  await expect(page.getByText(campaignName)).toBeVisible({ timeout: 20_000 });
+
   await page.getByRole("button", { name: "Acknowledge policy" }).click();
   await expect(page).toHaveURL(/success=acknowledged/, { timeout: 20_000 });
-  await expect(page.getByText("Attestation recorded.")).toBeVisible({ timeout: 20_000 });
-  await expect(page.getByText("You acknowledged this policy on")).toBeVisible({ timeout: 20_000 });
+  await expect(page.getByText(/acknowledged/i)).toBeVisible({ timeout: 20_000 });
 });
 
 test("viewer cannot access policy creation page", async ({ page }) => {

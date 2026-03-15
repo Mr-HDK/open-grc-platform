@@ -135,9 +135,13 @@ Phase 1 foundation is implemented. This repository is no longer managed as a gre
   - progressive linking from finding and risk acceptance detail pages with prefilled issue creation
 - Policy & Attestation module:
   - policy register with title, version, status, effective date, and owner
-  - draft/edit/publish/archive lifecycle for policy versions
-  - user acknowledgements with `acknowledged_at` tracking
-  - attestation coverage on policy detail (confirmed vs missing users)
+  - lifecycle v2: draft -> in_review -> active -> archived
+  - simple review decisions (approve/reject) by manager/admin before publish
+  - campaign-based attestations with audience targeting (by role, explicit profiles, seed-driven groups)
+  - attestation statuses: pending, acknowledged, overdue with campaign/global coverage
+  - policy waivers/exceptions with justification, expiration, approver, and revoke flow
+  - reminder cues for upcoming/overdue policy reviews and overdue attestations
+  - previous-version comparison on policy detail (metadata + content snapshot)
 - SQL migrations and seed data
 - Playwright E2E smoke test + optional risk/control/action/evidence/framework/libraries/settings tests
 
@@ -347,7 +351,7 @@ The workflow runs:
 - `tests/e2e/audits.lifecycle.spec.ts` validates audit plan -> engagement -> workpaper lifecycle plus list filtering.
 - `tests/e2e/risk-acceptances.lifecycle.spec.ts` validates manager create + revoke lifecycle.
 - `tests/e2e/issues.lifecycle.spec.ts` validates issue creation from finding context, update lifecycle, and overdue list filters.
-- `tests/e2e/policies.attestation.spec.ts` validates policy create -> publish -> acknowledge flow.
+- `tests/e2e/policies.attestation.spec.ts` validates policy review/approval/publish flow plus campaign launch and acknowledgement.
 - `tests/e2e/auditable-entities.lifecycle.spec.ts` validates auditable entity create/edit plus cross-link visibility from related detail pages.
 - `frameworks.mapping.spec.ts` requires admin credentials and at least one seeded control + framework requirement.
 - Framework mappings page is admin-only by design.

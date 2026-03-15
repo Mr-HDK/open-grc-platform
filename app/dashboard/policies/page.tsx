@@ -16,6 +16,7 @@ type PolicyRow = {
   version: string;
   status: string;
   effective_date: string;
+  next_review_date: string | null;
   owner_profile_id: string | null;
   published_at: string | null;
   updated_at: string;
@@ -28,10 +29,18 @@ type OwnerRow = {
   status: string | null;
 };
 
-type AttestationRow = {
+type AttestationTargetRow = {
   policy_id: string;
-  profile_id: string;
+  due_date: string;
+  acknowledged_at: string | null;
 };
+
+function dayDifferenceFromToday(dateValue: string) {
+  const today = new Date();
+  const todayUtc = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate()));
+  const target = new Date(`${dateValue}T00:00:00.000Z`);
+  return Math.floor((target.getTime() - todayUtc.getTime()) / (24 * 60 * 60 * 1000));
+}
 
 export default async function PoliciesPage({
   searchParams,
@@ -49,7 +58,9 @@ export default async function PoliciesPage({
   const supabase = await createSupabaseServerClient();
   let query = supabase
     .from("policies")
-    .select("id, title, version, status, effective_date, owner_profile_id, published_at, updated_at")
+    .select(
+      "id, title, version, status, effective_date, next_review_date, owner_profile_id, published_at, updated_at",
+    )
     .is("deleted_at", null)
     .order("updated_at", { ascending: false });
 
@@ -65,7 +76,7 @@ export default async function PoliciesPage({
     query = query.eq("owner_profile_id", owner);
   }
 
-  const [{ data: policies, error }, { data: owners }, { data: attestations }] = await Promise.all([
+  const [{ data: policies, error }, { data: owners }, { data: attestationTargets }] = await Promise.all([
     query.returns<PolicyRow[]>(),
     supabase
       .from("profiles")
@@ -74,31 +85,40 @@ export default async function PoliciesPage({
       .order("email")
       .returns<OwnerRow[]>(),
     supabase
-      .from("policy_attestations")
-      .select("policy_id, profile_id")
+      .from("policy_attestation_targets")
+      .select("policy_id, due_date, acknowledged_at")
       .eq("organization_id", profile.organizationId)
-      .returns<AttestationRow[]>(),
+      .returns<AttestationTargetRow[]>(),
   ]);
 
   const ownerById = new Map(
     (owners ?? []).map((item) => [item.id, item.full_name ? `${item.full_name} (${item.email})` : item.email]),
   );
 
-  const activeProfiles = (owners ?? []).filter((item) => item.status !== "deactivated");
-  const audienceProfileIds = new Set(activeProfiles.map((item) => item.id));
-  const totalAudience = activeProfiles.length;
+  const attestationStatsByPolicy = new Map<
+    string,
+    { total: number; acknowledged: number; pending: number; overdue: number }
+  >();
 
-  const attestationCountByPolicy = new Map<string, number>();
+  for (const target of attestationTargets ?? []) {
+    const stats = attestationStatsByPolicy.get(target.policy_id) ?? {
+      total: 0,
+      acknowledged: 0,
+      pending: 0,
+      overdue: 0,
+    };
 
-  for (const attestation of attestations ?? []) {
-    if (!audienceProfileIds.has(attestation.profile_id)) {
-      continue;
+    stats.total += 1;
+
+    if (target.acknowledged_at) {
+      stats.acknowledged += 1;
+    } else if (target.due_date < new Date().toISOString().slice(0, 10)) {
+      stats.overdue += 1;
+    } else {
+      stats.pending += 1;
     }
 
-    attestationCountByPolicy.set(
-      attestation.policy_id,
-      (attestationCountByPolicy.get(attestation.policy_id) ?? 0) + 1,
-    );
+    attestationStatsByPolicy.set(target.policy_id, stats);
   }
 
   return (
@@ -175,10 +195,16 @@ export default async function PoliciesPage({
                 Effective date
               </th>
               <th scope="col" className="px-4 py-3">
+                Next review
+              </th>
+              <th scope="col" className="px-4 py-3">
                 Owner
               </th>
               <th scope="col" className="px-4 py-3">
                 Attestations
+              </th>
+              <th scope="col" className="px-4 py-3">
+                Alerts
               </th>
               <th scope="col" className="px-4 py-3">
                 Updated
@@ -187,7 +213,32 @@ export default async function PoliciesPage({
           </thead>
           <tbody>
             {(policies ?? []).map((policy) => {
-              const attestationCount = attestationCountByPolicy.get(policy.id) ?? 0;
+              const stats = attestationStatsByPolicy.get(policy.id) ?? {
+                total: 0,
+                acknowledged: 0,
+                pending: 0,
+                overdue: 0,
+              };
+              const nextReviewDelta = policy.next_review_date
+                ? dayDifferenceFromToday(policy.next_review_date)
+                : null;
+              const alerts: string[] = [];
+
+              if (policy.status === "active" && nextReviewDelta !== null && nextReviewDelta < 0) {
+                alerts.push(`Review overdue ${Math.abs(nextReviewDelta)}d`);
+              } else if (
+                policy.status === "active" &&
+                nextReviewDelta !== null &&
+                nextReviewDelta >= 0 &&
+                nextReviewDelta <= 14
+              ) {
+                alerts.push(`Review in ${nextReviewDelta}d`);
+              }
+
+              if (stats.overdue > 0) {
+                alerts.push(`${stats.overdue} attestation overdue`);
+              }
+
               return (
                 <tr key={policy.id} className="border-b last:border-b-0">
                   <td className="px-4 py-3">
@@ -198,11 +249,15 @@ export default async function PoliciesPage({
                   <td className="px-4 py-3">{policy.version}</td>
                   <td className="px-4 py-3">{policy.status}</td>
                   <td className="px-4 py-3 text-muted-foreground">{policy.effective_date}</td>
+                  <td className="px-4 py-3 text-muted-foreground">{policy.next_review_date ?? "-"}</td>
                   <td className="px-4 py-3 text-muted-foreground">
                     {policy.owner_profile_id ? ownerById.get(policy.owner_profile_id) ?? "Unknown" : "-"}
                   </td>
                   <td className="px-4 py-3 text-muted-foreground">
-                    {attestationCount}/{totalAudience}
+                    {stats.acknowledged}/{stats.total} (p:{stats.pending} o:{stats.overdue})
+                  </td>
+                  <td className="px-4 py-3 text-muted-foreground">
+                    {alerts.length > 0 ? alerts.join(" | ") : "-"}
                   </td>
                   <td className="px-4 py-3 text-muted-foreground">
                     {new Date(policy.updated_at).toLocaleDateString()}
@@ -213,7 +268,7 @@ export default async function PoliciesPage({
 
             {!error && (policies?.length ?? 0) === 0 ? (
               <tr>
-                <td className="px-4 py-8 text-center text-muted-foreground" colSpan={7}>
+                <td className="px-4 py-8 text-center text-muted-foreground" colSpan={9}>
                   No policies found for the current filters.
                 </td>
               </tr>

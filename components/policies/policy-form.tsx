@@ -15,6 +15,7 @@ type PolicyFormDefaults = {
   title?: string;
   version?: string;
   effectiveDate?: string;
+  nextReviewDate?: string;
   ownerProfileId?: string | null;
   content?: string | null;
 };
@@ -66,6 +67,19 @@ export function PolicyForm({ mode, action, ownerOptions, defaults, error }: Poli
             type="date"
             required
             defaultValue={defaults?.effectiveDate ?? new Date().toISOString().slice(0, 10)}
+          />
+        </div>
+
+        <div className="space-y-2">
+          <label htmlFor="nextReviewDate" className="text-sm font-medium">
+            Next review date
+          </label>
+          <Input
+            id="nextReviewDate"
+            name="nextReviewDate"
+            type="date"
+            required
+            defaultValue={defaults?.nextReviewDate ?? new Date().toISOString().slice(0, 10)}
           />
         </div>
 

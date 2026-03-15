@@ -17,6 +17,10 @@ export default async function NewPolicyPage({
   const profile = await requireSessionProfile("manager");
   const params = await searchParams;
   const supabase = await createSupabaseServerClient();
+  const defaultEffectiveDate = new Date().toISOString().slice(0, 10);
+  const nextReviewDate = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)
+    .toISOString()
+    .slice(0, 10);
 
   const { data: owners } = await supabase
     .from("profiles")
@@ -43,7 +47,8 @@ export default async function NewPolicyPage({
         }))}
         defaults={{
           version: "1.0",
-          effectiveDate: new Date().toISOString().slice(0, 10),
+          effectiveDate: defaultEffectiveDate,
+          nextReviewDate: nextReviewDate,
           ownerProfileId: profile.id,
         }}
         error={params.error ? decodeURIComponent(params.error) : null}

@@ -20,7 +20,10 @@ export type AuditEntityType =
   | "audit_workpaper"
   | "issue"
   | "policy"
-  | "policy_attestation";
+  | "policy_attestation"
+  | "policy_approval"
+  | "policy_attestation_campaign"
+  | "policy_exception";
 export type AuditAction = "create" | "update" | "soft_delete";
 
 export type AuditEntry = {

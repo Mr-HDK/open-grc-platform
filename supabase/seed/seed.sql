@@ -825,3 +825,259 @@ where refs.finding_id is not null
     from public.issues
     where title = 'Seed issue - Legacy VPN MFA rollout exception tracking'
   );
+
+with organizations as (
+  select distinct organization_id
+  from public.profiles
+  where organization_id is not null
+),
+groups_seed (audience_key, name, description) as (
+  values
+    ('all-hands', 'All Hands', 'Seed audience group including all active profiles.'),
+    ('policy-owners', 'Policy Owners', 'Seed audience group including manager/admin policy owners.')
+),
+owner as (
+  select id
+  from public.profiles
+  order by created_at
+  limit 1
+)
+insert into public.policy_audience_groups (
+  organization_id,
+  audience_key,
+  name,
+  description,
+  created_by,
+  updated_by
+)
+select
+  organizations.organization_id,
+  groups_seed.audience_key,
+  groups_seed.name,
+  groups_seed.description,
+  owner.id,
+  owner.id
+from organizations
+cross join groups_seed
+cross join owner
+where not exists (
+  select 1
+  from public.policy_audience_groups existing
+  where existing.organization_id = organizations.organization_id
+    and existing.audience_key = groups_seed.audience_key
+    and existing.deleted_at is null
+);
+
+with all_hands as (
+  select id, organization_id
+  from public.policy_audience_groups
+  where audience_key = 'all-hands'
+    and deleted_at is null
+),
+policy_owners as (
+  select id, organization_id
+  from public.policy_audience_groups
+  where audience_key = 'policy-owners'
+    and deleted_at is null
+)
+insert into public.policy_audience_group_members (group_id, profile_id)
+select
+  all_hands.id,
+  profiles.id
+from all_hands
+join public.profiles profiles on profiles.organization_id = all_hands.organization_id
+where coalesce(profiles.status, 'active') not in ('deactivated', 'invited')
+on conflict (group_id, profile_id) do nothing;
+
+with policy_owners as (
+  select id, organization_id
+  from public.policy_audience_groups
+  where audience_key = 'policy-owners'
+    and deleted_at is null
+)
+insert into public.policy_audience_group_members (group_id, profile_id)
+select
+  policy_owners.id,
+  profiles.id
+from policy_owners
+join public.profiles profiles on profiles.organization_id = policy_owners.organization_id
+where profiles.role in ('manager', 'admin')
+  and coalesce(profiles.status, 'active') not in ('deactivated', 'invited')
+on conflict (group_id, profile_id) do nothing;
+
+with owner_candidates as (
+  select id, organization_id, 1 as priority
+  from public.profiles
+  where lower(email) = 'manager@open-grc.local'
+
+  union all
+
+  select id, organization_id, 2 as priority
+  from public.profiles
+  where lower(email) = 'admin@open-grc.local'
+
+  union all
+
+  select id, organization_id, 3 as priority
+  from public.profiles
+),
+owner as (
+  select id, organization_id
+  from owner_candidates
+  order by priority
+  limit 1
+)
+insert into public.policies (
+  organization_id,
+  title,
+  version,
+  status,
+  effective_date,
+  next_review_date,
+  owner_profile_id,
+  content,
+  published_at,
+  created_by,
+  updated_by
+)
+select
+  owner.organization_id,
+  'Seed policy - Access exception governance',
+  '2.0',
+  'active'::public.policy_status,
+  current_date - 30,
+  current_date + 60,
+  owner.id,
+  'Seeded policy text for governance v2 testing. Exceptions require documented justification, approver, expiration, and campaign-based attestations.',
+  timezone('utc', now()) - interval '10 day',
+  owner.id,
+  owner.id
+from owner
+where not exists (
+  select 1
+  from public.policies
+  where title = 'Seed policy - Access exception governance'
+    and version = '2.0'
+    and deleted_at is null
+);
+
+with refs as (
+  select
+    policies.id as policy_id,
+    policies.organization_id as organization_id,
+    (select id from public.profiles where organization_id = policies.organization_id order by created_at limit 1) as actor_id
+  from public.policies policies
+  where policies.title = 'Seed policy - Access exception governance'
+    and policies.version = '2.0'
+    and policies.deleted_at is null
+  limit 1
+)
+insert into public.policy_attestation_campaigns (
+  organization_id,
+  policy_id,
+  name,
+  due_date,
+  audience_type,
+  audience_role,
+  created_by,
+  updated_by
+)
+select
+  refs.organization_id,
+  refs.policy_id,
+  'Seed campaign - Viewer acknowledgement',
+  current_date + 14,
+  'role'::public.policy_campaign_audience_type,
+  'viewer'::public.app_role,
+  refs.actor_id,
+  refs.actor_id
+from refs
+where not exists (
+  select 1
+  from public.policy_attestation_campaigns existing
+  where existing.policy_id = refs.policy_id
+    and existing.name = 'Seed campaign - Viewer acknowledgement'
+    and existing.deleted_at is null
+);
+
+with campaign as (
+  select
+    campaigns.id as campaign_id,
+    campaigns.policy_id as policy_id,
+    campaigns.organization_id as organization_id,
+    campaigns.due_date as due_date
+  from public.policy_attestation_campaigns campaigns
+  where campaigns.name = 'Seed campaign - Viewer acknowledgement'
+    and campaigns.deleted_at is null
+  order by campaigns.created_at desc
+  limit 1
+)
+insert into public.policy_attestation_targets (
+  organization_id,
+  policy_id,
+  campaign_id,
+  profile_id,
+  due_date,
+  status
+)
+select
+  campaign.organization_id,
+  campaign.policy_id,
+  campaign.campaign_id,
+  profiles.id,
+  campaign.due_date,
+  case
+    when campaign.due_date < current_date then 'overdue'::public.policy_attestation_status
+    else 'pending'::public.policy_attestation_status
+  end
+from campaign
+join public.profiles profiles on profiles.organization_id = campaign.organization_id
+where profiles.role = 'viewer'
+  and coalesce(profiles.status, 'active') not in ('deactivated', 'invited')
+on conflict (campaign_id, profile_id) do nothing;
+
+with refs as (
+  select
+    policies.id as policy_id,
+    policies.organization_id as organization_id,
+    (select id from public.profiles where organization_id = policies.organization_id and role in ('manager', 'admin') order by created_at limit 1) as approver_id,
+    (select id from public.profiles where organization_id = policies.organization_id and role = 'viewer' order by created_at limit 1) as scoped_profile_id,
+    (select id from public.profiles where organization_id = policies.organization_id order by created_at limit 1) as actor_id
+  from public.policies policies
+  where policies.title = 'Seed policy - Access exception governance'
+    and policies.version = '2.0'
+    and policies.deleted_at is null
+  limit 1
+)
+insert into public.policy_exceptions (
+  organization_id,
+  policy_id,
+  profile_id,
+  justification,
+  expiration_date,
+  approved_by_profile_id,
+  status,
+  created_by,
+  updated_by
+)
+select
+  refs.organization_id,
+  refs.policy_id,
+  refs.scoped_profile_id,
+  'Seed waiver for demo purposes while the target user finalizes migration prerequisites.',
+  current_date + 30,
+  refs.approver_id,
+  'active'::public.policy_exception_status,
+  refs.actor_id,
+  refs.actor_id
+from refs
+where refs.approver_id is not null
+  and refs.scoped_profile_id is not null
+  and not exists (
+    select 1
+    from public.policy_exceptions existing
+    where existing.policy_id = refs.policy_id
+      and existing.profile_id = refs.scoped_profile_id
+      and existing.justification = 'Seed waiver for demo purposes while the target user finalizes migration prerequisites.'
+      and existing.deleted_at is null
+  );

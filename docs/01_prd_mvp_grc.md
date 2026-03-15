@@ -71,6 +71,7 @@ La base actuelle couvre:
 - campagnes de test des controles + constats (findings)
 - acceptations de risque (justification, approbateur, expiration, revocation)
 - registre unifie d'issues/exceptions/remediation (types, severite, statut, owner, due date, liens contextuels)
+- gouvernance policy v2 (draft/in_review/active/archived, approbations, campagnes d'attestation ciblees, waivers simples)
 - entites auditables (scope simple, parent optionnel, liens vers risques/controles/actifs/tiers)
 - pilotage d'audits internes (plans annuels/semestriels, engagements, workpapers, liens vers findings/actions/preuves)
 
