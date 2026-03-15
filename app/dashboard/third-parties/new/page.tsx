@@ -116,9 +116,14 @@ export default async function NewThirdPartyPage({
         }))}
         defaults={{
           criticality: "medium",
+          tier: "tier_2",
+          inherentRisk: "medium",
+          onboardingStatus: "in_progress",
           assessmentStatus: "monitoring",
           assessmentScore: 50,
+          reassessmentIntervalDays: 90,
           ownerProfileId: profile.id,
+          contractOwnerProfileId: profile.id,
           selectedRiskIds,
           selectedControlIds,
           selectedActionIds,

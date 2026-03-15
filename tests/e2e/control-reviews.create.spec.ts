@@ -70,7 +70,19 @@ test("contributor can create, update, and audit a control review", async ({ page
   await page.getByLabel("Notes").fill("Playwright review test completed");
   await page.getByRole("button", { name: "Save changes" }).click();
 
-  await expect(page).toHaveURL(/\/dashboard\/control-reviews\/[^/]+$/, { timeout: 20_000 });
+  await expect
+    .poll(
+      async () => {
+        await page.goto(detailHref!);
+        const section = page.locator("section").filter({
+          has: page.getByRole("heading", { name: "Audit log" }),
+        });
+        return section.locator("li.rounded-lg").count();
+      },
+      { timeout: 20_000 },
+    )
+    .toBeGreaterThanOrEqual(2);
+
   const updatedAuditSection = page.locator("section").filter({
     has: page.getByRole("heading", { name: "Audit log" }),
   });

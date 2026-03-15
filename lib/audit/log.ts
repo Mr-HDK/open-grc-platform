@@ -23,7 +23,9 @@ export type AuditEntityType =
   | "policy_attestation"
   | "policy_approval"
   | "policy_attestation_campaign"
-  | "policy_exception";
+  | "policy_exception"
+  | "third_party_review_response"
+  | "third_party_document_request";
 export type AuditAction = "create" | "update" | "soft_delete";
 
 export type AuditEntry = {

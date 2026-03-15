@@ -118,11 +118,17 @@ Champs:
 - name
 - service
 - criticality
+- tier
+- inherent_risk
+- onboarding_status
 - assessment_status
 - assessment_score
 - next_review_date nullable
+- renewal_date nullable
+- reassessment_interval_days
 - last_reviewed_at nullable
 - owner_profile_id nullable
+- contract_owner_profile_id nullable
 - notes nullable
 - created_by nullable
 - updated_by nullable
@@ -167,12 +173,64 @@ Champs:
 - reviewer_profile_id nullable
 - assessment_status
 - assessment_score
+- questionnaire_score
+- conclusion
 - notes nullable
 - next_review_date nullable
 - created_by nullable
 - updated_by nullable
 - created_at
 - updated_at
+
+## third_party_review_questions
+
+Champs:
+- id
+- organization_id
+- question_key
+- prompt
+- weight
+- is_active
+- created_by nullable
+- updated_by nullable
+- created_at
+- updated_at
+- deleted_at
+
+## third_party_review_responses
+
+Champs:
+- id
+- organization_id
+- third_party_review_id
+- question_id
+- response_value
+- response_notes nullable
+- score
+- created_by nullable
+- updated_by nullable
+- created_at
+- updated_at
+
+## third_party_document_requests
+
+Champs:
+- id
+- organization_id
+- third_party_id
+- title
+- description nullable
+- status
+- owner_profile_id nullable
+- requested_by_profile_id nullable
+- due_date
+- evidence_id nullable
+- response_notes nullable
+- created_by nullable
+- updated_by nullable
+- created_at
+- updated_at
+- deleted_at
 
 ## auditable_entities
 
@@ -592,6 +650,9 @@ Champs:
 - third_party n..n controls via third_party_controls
 - third_party n..n action_plans via third_party_actions
 - third_party 1..n reviews via third_party_reviews
+- third_party 1..n document_requests via third_party_document_requests
+- third_party_review 1..n responses via third_party_review_responses
+- third_party_review_question 1..n responses via third_party_review_responses
 - policy 1..n attestations via policy_attestations
 - profile 1..n policy_attestations
 - policy 1..n approvals via policy_approvals
@@ -650,6 +711,48 @@ Champs:
 - medium
 - high
 - critical
+
+### third_party_assessment_status
+- acceptable
+- monitoring
+- elevated
+- critical
+
+### third_party_tier
+- tier_1
+- tier_2
+- tier_3
+
+### third_party_inherent_risk
+- low
+- medium
+- high
+- critical
+
+### third_party_onboarding_status
+- planned
+- in_progress
+- completed
+- blocked
+
+### third_party_review_response_value
+- yes
+- partial
+- no
+- not_applicable
+
+### third_party_review_conclusion
+- low_risk
+- moderate_risk
+- high_risk
+- critical_risk
+
+### third_party_document_request_status
+- requested
+- submitted
+- accepted
+- rejected
+- waived
 
 ### policy_status
 - draft

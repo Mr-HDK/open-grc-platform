@@ -48,12 +48,26 @@ test("contributor can create, edit, and cross-link an auditable entity", async (
   await page.getByRole("textbox", { name: "Vendor" }).fill(vendorName);
   await page.getByRole("textbox", { name: "Service" }).fill("Identity service");
   await page.getByLabel("Criticality").selectOption("medium");
-  await page.getByLabel("Assessment status").selectOption("monitoring");
-  await page.getByLabel("Assessment score (0-100)").fill("61");
+  await page.getByLabel("Review status").selectOption("monitoring");
+  await page.getByLabel("Review score (0-100)").fill("61");
   await page.getByLabel("Next review date").fill("2031-01-31");
   await page.getByRole("button", { name: "Create third-party" }).click();
 
-  await expect(page).toHaveURL(/\/dashboard\/third-parties\/[0-9a-f-]+$/, { timeout: 20_000 });
+  await expect
+    .poll(
+      async () => {
+        await page.goto(`/dashboard/third-parties?q=${encodeURIComponent(vendorName)}`);
+        return page.getByRole("link", { name: vendorName }).count();
+      },
+      { timeout: 20_000 },
+    )
+    .toBeGreaterThan(0);
+
+  const thirdPartyHref = await page.getByRole("link", { name: vendorName }).getAttribute("href");
+  expect(thirdPartyHref).toBeTruthy();
+  await page.goto(thirdPartyHref!);
+  await expect(page.getByRole("heading", { name: vendorName })).toBeVisible();
+
   const thirdPartyUrl = page.url();
   const thirdPartyId = requireIdFromUrl(thirdPartyUrl, "third-parties");
 

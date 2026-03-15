@@ -67,6 +67,9 @@ La base actuelle couvre:
 - collaboration legere (commentaires, activity trail)
 - notifications utiles (actions en retard, controles a revoir) avec sync planifiable
 - registre incidents (statuts simples, liens vers risques/actions)
+- third-party risk management v2 (tiering, inherent risk, onboarding, owner/contract owner, renewal, reassessment cadence)
+- questionnaires de revue fournisseur seed-driven avec score pondere, conclusion et historique
+- checklist de demandes documentaires fournisseur avec statuts, due dates et lien optionnel vers evidence
 - revues periodiques des controles (statut + date cible)
 - campagnes de test des controles + constats (findings)
 - acceptations de risque (justification, approbateur, expiration, revocation)

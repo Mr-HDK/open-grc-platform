@@ -6,7 +6,13 @@ import { requireSessionProfile } from "@/lib/auth/profile";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import {
   isThirdPartyAssessmentStatus,
+  isThirdPartyInherentRisk,
+  isThirdPartyOnboardingStatus,
+  isThirdPartyTier,
   type ThirdPartyAssessmentStatus,
+  type ThirdPartyInherentRisk,
+  type ThirdPartyOnboardingStatus,
+  type ThirdPartyTier,
 } from "@/lib/validators/third-party";
 import { isAssetCriticality, type AssetCriticality } from "@/lib/validators/asset";
 
@@ -15,10 +21,16 @@ type ThirdPartyRow = {
   name: string;
   service: string;
   criticality: string;
+  tier: string;
+  inherent_risk: string;
+  onboarding_status: string;
   assessment_status: string;
   assessment_score: number;
   next_review_date: string | null;
+  renewal_date: string | null;
+  reassessment_interval_days: number;
   owner_profile_id: string | null;
+  contract_owner_profile_id: string | null;
   notes: string | null;
 };
 
@@ -65,7 +77,9 @@ async function getThirdParty(thirdPartyId: string, organizationId: string) {
   const supabase = await createSupabaseServerClient();
   const { data } = await supabase
     .from("third_parties")
-    .select("id, name, service, criticality, assessment_status, assessment_score, next_review_date, owner_profile_id, notes")
+    .select(
+      "id, name, service, criticality, tier, inherent_risk, onboarding_status, assessment_status, assessment_score, next_review_date, renewal_date, reassessment_interval_days, owner_profile_id, contract_owner_profile_id, notes",
+    )
     .eq("id", thirdPartyId)
     .eq("organization_id", organizationId)
     .is("deleted_at", null)
@@ -157,6 +171,15 @@ export default async function EditThirdPartyPage({
   )
     ? thirdParty.assessment_status
     : "monitoring";
+  const tier: ThirdPartyTier = isThirdPartyTier(thirdParty.tier) ? thirdParty.tier : "tier_2";
+  const inherentRisk: ThirdPartyInherentRisk = isThirdPartyInherentRisk(thirdParty.inherent_risk)
+    ? thirdParty.inherent_risk
+    : "medium";
+  const onboardingStatus: ThirdPartyOnboardingStatus = isThirdPartyOnboardingStatus(
+    thirdParty.onboarding_status,
+  )
+    ? thirdParty.onboarding_status
+    : "in_progress";
 
   return (
     <div className="space-y-4">
@@ -195,10 +218,16 @@ export default async function EditThirdPartyPage({
           name: thirdParty.name,
           service: thirdParty.service,
           criticality,
+          tier,
+          inherentRisk,
+          onboardingStatus,
           assessmentStatus,
           assessmentScore: thirdParty.assessment_score,
           nextReviewDate: thirdParty.next_review_date,
+          renewalDate: thirdParty.renewal_date,
+          reassessmentIntervalDays: thirdParty.reassessment_interval_days,
           ownerProfileId: thirdParty.owner_profile_id,
+          contractOwnerProfileId: thirdParty.contract_owner_profile_id,
           notes: thirdParty.notes,
           selectedRiskIds: (linkedRisksResult.data ?? []).map((row) => row.risk_id),
           selectedControlIds: (linkedControlsResult.data ?? []).map((row) => row.control_id),

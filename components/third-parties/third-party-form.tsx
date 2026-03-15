@@ -6,7 +6,13 @@ import { Input } from "@/components/ui/input";
 import { assetCriticalityOptions, type AssetCriticality } from "@/lib/validators/asset";
 import {
   thirdPartyAssessmentStatusOptions,
+  thirdPartyInherentRiskOptions,
+  thirdPartyOnboardingStatusOptions,
+  thirdPartyTierOptions,
   type ThirdPartyAssessmentStatus,
+  type ThirdPartyInherentRisk,
+  type ThirdPartyOnboardingStatus,
+  type ThirdPartyTier,
 } from "@/lib/validators/third-party";
 import { cn } from "@/lib/utils/cn";
 
@@ -41,10 +47,16 @@ type ThirdPartyFormDefaults = {
   name?: string;
   service?: string;
   criticality?: AssetCriticality;
+  tier?: ThirdPartyTier;
+  inherentRisk?: ThirdPartyInherentRisk;
+  onboardingStatus?: ThirdPartyOnboardingStatus;
   assessmentStatus?: ThirdPartyAssessmentStatus;
   assessmentScore?: number;
   nextReviewDate?: string | null;
+  renewalDate?: string | null;
+  reassessmentIntervalDays?: number;
   ownerProfileId?: string | null;
+  contractOwnerProfileId?: string | null;
   notes?: string | null;
   selectedRiskIds?: string[];
   selectedControlIds?: string[];
@@ -131,6 +143,60 @@ export function ThirdPartyForm({
         </div>
 
         <div className="space-y-2">
+          <label htmlFor="tier" className="text-sm font-medium">
+            Tier
+          </label>
+          <select
+            id="tier"
+            name="tier"
+            defaultValue={defaults?.tier ?? "tier_2"}
+            className="h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm"
+          >
+            {thirdPartyTierOptions.map((option) => (
+              <option key={option} value={option}>
+                {option}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div className="space-y-2">
+          <label htmlFor="inherentRisk" className="text-sm font-medium">
+            Inherent risk
+          </label>
+          <select
+            id="inherentRisk"
+            name="inherentRisk"
+            defaultValue={defaults?.inherentRisk ?? "medium"}
+            className="h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm"
+          >
+            {thirdPartyInherentRiskOptions.map((option) => (
+              <option key={option} value={option}>
+                {option}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div className="space-y-2">
+          <label htmlFor="onboardingStatus" className="text-sm font-medium">
+            Onboarding status
+          </label>
+          <select
+            id="onboardingStatus"
+            name="onboardingStatus"
+            defaultValue={defaults?.onboardingStatus ?? "in_progress"}
+            className="h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm"
+          >
+            {thirdPartyOnboardingStatusOptions.map((option) => (
+              <option key={option} value={option}>
+                {option}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div className="space-y-2">
           <label htmlFor="ownerProfileId" className="text-sm font-medium">
             Owner
           </label>
@@ -150,8 +216,27 @@ export function ThirdPartyForm({
         </div>
 
         <div className="space-y-2">
+          <label htmlFor="contractOwnerProfileId" className="text-sm font-medium">
+            Contract owner
+          </label>
+          <select
+            id="contractOwnerProfileId"
+            name="contractOwnerProfileId"
+            defaultValue={defaults?.contractOwnerProfileId ?? ""}
+            className="h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm"
+          >
+            <option value="">Unassigned</option>
+            {owners.map((owner) => (
+              <option key={owner.id} value={owner.id}>
+                {owner.label}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div className="space-y-2">
           <label htmlFor="assessmentStatus" className="text-sm font-medium">
-            Assessment status
+            Review status
           </label>
           <select
             id="assessmentStatus"
@@ -169,7 +254,7 @@ export function ThirdPartyForm({
 
         <div className="space-y-2">
           <label htmlFor="assessmentScore" className="text-sm font-medium">
-            Assessment score (0-100)
+            Review score (0-100)
           </label>
           <Input
             id="assessmentScore"
@@ -190,6 +275,32 @@ export function ThirdPartyForm({
             name="nextReviewDate"
             type="date"
             defaultValue={defaults?.nextReviewDate ?? ""}
+          />
+        </div>
+
+        <div className="space-y-2">
+          <label htmlFor="renewalDate" className="text-sm font-medium">
+            Renewal date
+          </label>
+          <Input
+            id="renewalDate"
+            name="renewalDate"
+            type="date"
+            defaultValue={defaults?.renewalDate ?? ""}
+          />
+        </div>
+
+        <div className="space-y-2">
+          <label htmlFor="reassessmentIntervalDays" className="text-sm font-medium">
+            Reassessment interval (days)
+          </label>
+          <Input
+            id="reassessmentIntervalDays"
+            name="reassessmentIntervalDays"
+            type="number"
+            min={7}
+            max={730}
+            defaultValue={defaults?.reassessmentIntervalDays ?? 90}
           />
         </div>
 

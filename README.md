@@ -98,11 +98,11 @@ Phase 1 foundation is implemented. This repository is no longer managed as a gre
 - Incident Register module:
   - incident CRUD with status tracking
   - optional links to risks and action plans
-- Third-Party Risk Lite module:
-  - vendor register with service, criticality, owner, and current posture
-  - simple assessment score and next review planning
-  - links to existing risks, controls, and action plans
-  - periodic review log that updates the latest assessment snapshot
+- Third-Party Risk Management v2 module:
+  - enriched vendor register with tier, inherent risk, onboarding status, contract owner, renewal date, and reassessment cadence
+  - questionnaire-based periodic reviews with seed-driven questions, weighted scoring, and risk conclusion
+  - document request checklist per vendor with due dates, status workflow, and optional evidence linkage
+  - linked visibility to risks, controls, action plans, auditable entities, and open issues
 - Control Reviews module:
   - scheduled review tracking for controls
   - status, target date, and completion tracking
