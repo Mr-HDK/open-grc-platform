@@ -2,10 +2,12 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { AuditLogSection } from "@/components/audit/audit-log-section";
+import { LinkedIssuesSection } from "@/components/issues/linked-issues-section";
 import { buttonVariants } from "@/components/ui/button";
 import { FeedbackAlert } from "@/components/ui/feedback-alert";
 import { getAuditEntries } from "@/lib/audit/log";
 import { requireSessionProfile } from "@/lib/auth/profile";
+import { getIssueAgeDays, isIssueOverdue } from "@/lib/issues/aging";
 import { hasRole } from "@/lib/permissions/roles";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { revokeRiskAcceptanceAction } from "@/app/dashboard/risk-acceptances/actions";
@@ -31,6 +33,15 @@ type RiskRow = { id: string; title: string };
 type ControlRow = { id: string; code: string; title: string };
 type ActionPlanRow = { id: string; title: string };
 type ProfileRow = { id: string; email: string; full_name: string | null };
+type LinkedIssueRow = {
+  id: string;
+  title: string;
+  issue_type: string;
+  status: string;
+  severity: string;
+  due_date: string | null;
+  created_at: string;
+};
 
 function toUtcDate(dateValue: string) {
   return new Date(`${dateValue}T00:00:00.000Z`);
@@ -122,6 +133,21 @@ async function getProfile(profileId: string | null, organizationId: string) {
   return data;
 }
 
+async function getLinkedIssuesForRiskAcceptance(riskAcceptanceId: string, organizationId: string) {
+  const supabase = await createSupabaseServerClient();
+  const { data } = await supabase
+    .from("issues")
+    .select("id, title, issue_type, status, severity, due_date, created_at")
+    .eq("organization_id", organizationId)
+    .eq("source_risk_acceptance_id", riskAcceptanceId)
+    .is("deleted_at", null)
+    .order("updated_at", { ascending: false })
+    .limit(20)
+    .returns<LinkedIssueRow[]>();
+
+  return data ?? [];
+}
+
 export default async function RiskAcceptanceDetailPage({
   params,
   searchParams,
@@ -143,14 +169,31 @@ export default async function RiskAcceptanceDetailPage({
   const effectiveStatus = deriveEffectiveStatus(acceptance.status, acceptance.expiration_date);
   const reminderDays = daysUntil(acceptance.expiration_date);
 
-  const [risk, control, actionPlan, approver, revokedBy, auditEntries] = await Promise.all([
+  const [risk, control, actionPlan, approver, revokedBy, linkedIssues, auditEntries] =
+    await Promise.all([
     getRisk(acceptance.risk_id, profile.organizationId),
     getControl(acceptance.control_id, profile.organizationId),
     getActionPlan(acceptance.action_plan_id, profile.organizationId),
     getProfile(acceptance.approved_by_profile_id, profile.organizationId),
     getProfile(acceptance.revoked_by_profile_id, profile.organizationId),
+    getLinkedIssuesForRiskAcceptance(acceptance.id, profile.organizationId),
     getAuditEntries("risk_acceptance", acceptance.id),
   ]);
+
+  const issuePrefill = new URLSearchParams({
+    riskAcceptanceId: acceptance.id,
+    riskId: acceptance.risk_id,
+  });
+
+  if (acceptance.control_id) {
+    issuePrefill.set("controlId", acceptance.control_id);
+  }
+
+  if (acceptance.action_plan_id) {
+    issuePrefill.set("actionPlanId", acceptance.action_plan_id);
+  }
+
+  const raiseIssueHref = `/dashboard/issues/new?${issuePrefill.toString()}`;
 
   const approverLabel = approver
     ? approver.full_name
@@ -264,6 +307,27 @@ export default async function RiskAcceptanceDetailPage({
         <p className="text-sm text-muted-foreground">Justification</p>
         <p className="mt-2 whitespace-pre-line text-sm">{acceptance.justification}</p>
       </div>
+
+      <LinkedIssuesSection
+        title="Linked issues"
+        items={linkedIssues.map((issue) => ({
+          id: issue.id,
+          title: issue.title,
+          issueType: issue.issue_type,
+          status: issue.status,
+          severity: issue.severity,
+          dueDate: issue.due_date,
+          ageDays: getIssueAgeDays(issue.created_at),
+          overdue: isIssueOverdue({
+            status: issue.status,
+            dueDate: issue.due_date,
+          }),
+        }))}
+        emptyMessage="No issues linked to this risk acceptance."
+        canCreate={hasRole("contributor", profile.role)}
+        createHref={raiseIssueHref}
+        createLabel="Raise issue"
+      />
 
       <AuditLogSection items={auditEntries} />
     </div>

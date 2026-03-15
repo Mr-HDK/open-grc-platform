@@ -3,10 +3,12 @@ import { notFound } from "next/navigation";
 
 import { archiveFindingAction } from "@/app/dashboard/findings/actions";
 import { AuditLogSection } from "@/components/audit/audit-log-section";
+import { LinkedIssuesSection } from "@/components/issues/linked-issues-section";
 import { buttonVariants } from "@/components/ui/button";
 import { FeedbackAlert } from "@/components/ui/feedback-alert";
 import { getAuditEntries } from "@/lib/audit/log";
 import { requireSessionProfile } from "@/lib/auth/profile";
+import { getIssueAgeDays, isIssueOverdue } from "@/lib/issues/aging";
 import { hasRole } from "@/lib/permissions/roles";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
@@ -37,6 +39,16 @@ type ControlTestRow = {
   result: string;
   test_period_start: string;
   test_period_end: string;
+};
+
+type LinkedIssueRow = {
+  id: string;
+  title: string;
+  issue_type: string;
+  status: string;
+  severity: string;
+  due_date: string | null;
+  created_at: string;
 };
 
 async function getFindingById(findingId: string, organizationId: string) {
@@ -99,6 +111,21 @@ async function getControlTest(controlTestId: string | null, organizationId: stri
   return data;
 }
 
+async function getLinkedIssuesForFinding(findingId: string, organizationId: string) {
+  const supabase = await createSupabaseServerClient();
+  const { data } = await supabase
+    .from("issues")
+    .select("id, title, issue_type, status, severity, due_date, created_at")
+    .eq("organization_id", organizationId)
+    .eq("source_finding_id", findingId)
+    .is("deleted_at", null)
+    .order("updated_at", { ascending: false })
+    .limit(20)
+    .returns<LinkedIssueRow[]>();
+
+  return data ?? [];
+}
+
 export default async function FindingDetailPage({
   params,
   searchParams,
@@ -118,13 +145,20 @@ export default async function FindingDetailPage({
     notFound();
   }
 
-  const [control, owner, sourceControlTest, resolvedControlTest, auditEntries] = await Promise.all([
+  const [control, owner, sourceControlTest, resolvedControlTest, linkedIssues, auditEntries] =
+    await Promise.all([
     getControl(finding.control_id, profile.organizationId),
     getOwner(finding.owner_profile_id, profile.organizationId),
     getControlTest(finding.source_control_test_id, profile.organizationId),
     getControlTest(finding.resolved_by_control_test_id, profile.organizationId),
+    getLinkedIssuesForFinding(finding.id, profile.organizationId),
     getAuditEntries("finding", finding.id),
   ]);
+
+  const raiseIssueHref = `/dashboard/issues/new?${new URLSearchParams({
+    findingId: finding.id,
+    controlId: finding.control_id,
+  }).toString()}`;
 
   return (
     <div className="space-y-6">
@@ -258,6 +292,27 @@ export default async function FindingDetailPage({
           ) : null}
         </ul>
       </section>
+
+      <LinkedIssuesSection
+        title="Linked issues"
+        items={linkedIssues.map((issue) => ({
+          id: issue.id,
+          title: issue.title,
+          issueType: issue.issue_type,
+          status: issue.status,
+          severity: issue.severity,
+          dueDate: issue.due_date,
+          ageDays: getIssueAgeDays(issue.created_at),
+          overdue: isIssueOverdue({
+            status: issue.status,
+            dueDate: issue.due_date,
+          }),
+        }))}
+        emptyMessage="No issues linked to this finding."
+        canCreate={canEdit}
+        createHref={raiseIssueHref}
+        createLabel="Raise issue"
+      />
 
       <AuditLogSection items={auditEntries} />
     </div>

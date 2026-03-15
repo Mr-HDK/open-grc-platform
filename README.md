@@ -127,6 +127,12 @@ Phase 1 foundation is implemented. This repository is no longer managed as a gre
   - optional links to risk control/action scope
   - status lifecycle: active, expired, revoked
   - expiration reminders and revocation flow
+- Unified Issues module:
+  - unified issues register across findings/exceptions/remediation follow-up
+  - issue types: audit_finding, control_failure, policy_exception, vendor_issue, risk_exception, incident_follow_up
+  - list filters: type, status, severity, owner, overdue
+  - detail view with aging, delay indicators, contextual links, and audit history
+  - progressive linking from finding and risk acceptance detail pages with prefilled issue creation
 - Policy & Attestation module:
   - policy register with title, version, status, effective date, and owner
   - draft/edit/publish/archive lifecycle for policy versions
@@ -166,6 +172,7 @@ app/
     risks/
     controls/
     actions/
+    issues/
     evidence/
     frameworks/
     libraries/
@@ -174,6 +181,7 @@ components/
   auditable-entities/
   audits/
   assets/
+  issues/
   third-parties/
   policies/
   audit/
@@ -187,6 +195,7 @@ lib/
   audit/
   audits/
   auth/
+  issues/
   libraries/
   permissions/
   scoring/
@@ -337,6 +346,7 @@ The workflow runs:
 - `tests/e2e/control-tests.findings.spec.ts` validates failed control test -> finding creation -> retest closure.
 - `tests/e2e/audits.lifecycle.spec.ts` validates audit plan -> engagement -> workpaper lifecycle plus list filtering.
 - `tests/e2e/risk-acceptances.lifecycle.spec.ts` validates manager create + revoke lifecycle.
+- `tests/e2e/issues.lifecycle.spec.ts` validates issue creation from finding context, update lifecycle, and overdue list filters.
 - `tests/e2e/policies.attestation.spec.ts` validates policy create -> publish -> acknowledge flow.
 - `tests/e2e/auditable-entities.lifecycle.spec.ts` validates auditable entity create/edit plus cross-link visibility from related detail pages.
 - `frameworks.mapping.spec.ts` requires admin credentials and at least one seeded control + framework requirement.

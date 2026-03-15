@@ -750,3 +750,78 @@ where refs.audit_engagement_id is not null
     where audit_engagement_id = refs.audit_engagement_id
       and title = 'Seed workpaper - Exception inventory walkthrough'
   );
+
+with owner_candidates as (
+  select id, organization_id, 1 as priority
+  from public.profiles
+  where lower(email) = 'manager@open-grc.local'
+
+  union all
+
+  select id, organization_id, 2 as priority
+  from public.profiles
+  where lower(email) = 'admin@open-grc.local'
+
+  union all
+
+  select id, organization_id, 3 as priority
+  from public.profiles
+),
+owner as (
+  select id, organization_id
+  from owner_candidates
+  order by priority
+  limit 1
+),
+refs as (
+  select
+    owner.id as owner_id,
+    owner.organization_id as organization_id,
+    (select id from public.findings where title = 'Seed finding - Legacy VPN MFA exceptions remain active' limit 1) as finding_id,
+    (select id from public.controls where code = 'IAM-001' limit 1) as control_id,
+    (select id from public.action_plans where title = 'Enforce MFA on remaining legacy VPN accounts' limit 1) as action_plan_id,
+    (select id from public.audit_engagements where title = 'Seed audit engagement - VPN MFA exceptions' limit 1) as audit_engagement_id
+  from owner
+)
+insert into public.issues (
+  organization_id,
+  title,
+  description,
+  issue_type,
+  severity,
+  status,
+  owner_profile_id,
+  due_date,
+  root_cause,
+  management_response,
+  source_finding_id,
+  control_id,
+  action_plan_id,
+  audit_engagement_id,
+  created_by,
+  updated_by
+)
+select
+  refs.organization_id,
+  'Seed issue - Legacy VPN MFA rollout exception tracking',
+  'Unified issue seeded for prompt validation: legacy VPN MFA exceptions remain open and need remediation follow-up.',
+  'audit_finding'::public.issue_type,
+  'high'::public.issue_severity,
+  'open'::public.issue_status,
+  refs.owner_id,
+  current_date + 14,
+  'Exception inventory and closure evidence remain fragmented across tools.',
+  'Track open exceptions in a single register and require closure evidence before marking resolved.',
+  refs.finding_id,
+  refs.control_id,
+  refs.action_plan_id,
+  refs.audit_engagement_id,
+  refs.owner_id,
+  refs.owner_id
+from refs
+where refs.finding_id is not null
+  and not exists (
+    select 1
+    from public.issues
+    where title = 'Seed issue - Legacy VPN MFA rollout exception tracking'
+  );

@@ -18,6 +18,7 @@ export type AuditEntityType =
   | "audit_plan_item"
   | "audit_engagement"
   | "audit_workpaper"
+  | "issue"
   | "policy"
   | "policy_attestation";
 export type AuditAction = "create" | "update" | "soft_delete";

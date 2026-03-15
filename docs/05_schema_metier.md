@@ -346,6 +346,36 @@ Champs:
 - acknowledged_at
 - created_at
 
+## issues
+
+Champs:
+- id
+- organization_id
+- title
+- description
+- issue_type (audit_finding, control_failure, policy_exception, vendor_issue, risk_exception, incident_follow_up)
+- severity (low, medium, high, critical)
+- status (open, in_progress, blocked, resolved, closed)
+- owner_profile_id nullable
+- due_date nullable
+- root_cause nullable
+- management_response nullable
+- resolution_notes nullable
+- source_finding_id nullable
+- source_risk_acceptance_id nullable
+- risk_id nullable
+- control_id nullable
+- action_plan_id nullable
+- incident_id nullable
+- policy_id nullable
+- third_party_id nullable
+- audit_engagement_id nullable
+- created_by nullable
+- updated_by nullable
+- created_at
+- updated_at
+- deleted_at
+
 ## action_plans
 
 Champs:
@@ -481,6 +511,15 @@ Champs:
 - third_party 1..n reviews via third_party_reviews
 - policy 1..n attestations via policy_attestations
 - profile 1..n policy_attestations
+- finding 1..n issues via source_finding_id
+- risk_acceptance 1..n issues via source_risk_acceptance_id
+- issue 0..1 risk via risk_id
+- issue 0..1 control via control_id
+- issue 0..1 action_plan via action_plan_id
+- issue 0..1 incident via incident_id
+- issue 0..1 policy via policy_id
+- issue 0..1 third_party via third_party_id
+- issue 0..1 audit_engagement via audit_engagement_id
 - framework_requirement 1..1 assessment per organization
 - assessment n..n evidence via framework_requirement_assessment_evidence
 
@@ -528,6 +567,27 @@ Champs:
 - draft
 - active
 - archived
+
+### issue_type
+- audit_finding
+- control_failure
+- policy_exception
+- vendor_issue
+- risk_exception
+- incident_follow_up
+
+### issue_severity
+- low
+- medium
+- high
+- critical
+
+### issue_status
+- open
+- in_progress
+- blocked
+- resolved
+- closed
 
 ## Règles importantes
 

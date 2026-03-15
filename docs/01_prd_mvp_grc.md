@@ -43,6 +43,7 @@ Les equipes gerent souvent les risques dans Excel, Notion ou des documents isole
 - Relier un risque a des controles et a des actions
 - Stocker des preuves liees a des controles
 - Mapper les controles a des frameworks
+- Suivre constats, exceptions et remediations dans un registre unifie
 - Produire rapidement une vue de synthese pour management / audit
 - Demarrer plus vite grace a des bibliotheques ou imports reutilisables
 - Extraire les donnees utiles pour pilotage et audit
@@ -69,6 +70,7 @@ La base actuelle couvre:
 - revues periodiques des controles (statut + date cible)
 - campagnes de test des controles + constats (findings)
 - acceptations de risque (justification, approbateur, expiration, revocation)
+- registre unifie d'issues/exceptions/remediation (types, severite, statut, owner, due date, liens contextuels)
 - entites auditables (scope simple, parent optionnel, liens vers risques/controles/actifs/tiers)
 - pilotage d'audits internes (plans annuels/semestriels, engagements, workpapers, liens vers findings/actions/preuves)
 
