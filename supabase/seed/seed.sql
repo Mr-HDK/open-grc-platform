@@ -332,3 +332,421 @@ join public.framework_requirements requirements
 on conflict (control_id, framework_requirement_id) do update
 set
   notes = excluded.notes;
+
+with owner as (
+  select id from public.profiles order by created_at limit 1
+),
+entity_rows (name, entity_type, status, parent_name, description) as (
+  values
+    ('Corporate IT', 'business_unit'::public.auditable_entity_type, 'active'::public.auditable_entity_status, null::text, 'Seeded top-level business unit for core technology governance.'),
+    ('Identity & Access Management', 'process'::public.auditable_entity_type, 'active'::public.auditable_entity_status, 'Corporate IT', 'Seeded IAM process to scope access, MFA, and privileged account controls.'),
+    ('VPN Access Platform', 'application'::public.auditable_entity_type, 'active'::public.auditable_entity_status, 'Identity & Access Management', 'Seeded application entity used by access-related risks and controls.'),
+    ('Vendor Onboarding Oversight', 'vendor'::public.auditable_entity_type, 'active'::public.auditable_entity_status, 'Corporate IT', 'Seeded vendor oversight scope for third-party onboarding reviews.')
+)
+insert into public.auditable_entities (
+  name,
+  entity_type,
+  status,
+  owner_profile_id,
+  parent_entity_id,
+  description,
+  created_by,
+  updated_by
+)
+select
+  entity_rows.name,
+  entity_rows.entity_type,
+  entity_rows.status,
+  owner.id,
+  parent_entity.id,
+  entity_rows.description,
+  owner.id,
+  owner.id
+from entity_rows
+left join owner on true
+left join public.auditable_entities parent_entity on parent_entity.name = entity_rows.parent_name
+where not exists (
+  select 1
+  from public.auditable_entities existing
+  where existing.name = entity_rows.name
+);
+
+with link_rows (entity_name, risk_title) as (
+  values
+    ('Identity & Access Management', 'No MFA for legacy VPN users'),
+    ('VPN Access Platform', 'No MFA for legacy VPN users'),
+    ('Vendor Onboarding Oversight', 'Single approver vendor onboarding')
+)
+insert into public.auditable_entity_risks (auditable_entity_id, risk_id)
+select
+  entities.id,
+  risks.id
+from link_rows
+join public.auditable_entities entities on entities.name = link_rows.entity_name
+join public.risks risks on risks.title = link_rows.risk_title
+on conflict (auditable_entity_id, risk_id) do nothing;
+
+with link_rows (entity_name, control_code) as (
+  values
+    ('Identity & Access Management', 'IAM-001'),
+    ('VPN Access Platform', 'IAM-001'),
+    ('Vendor Onboarding Oversight', 'THIRD-006')
+)
+insert into public.auditable_entity_controls (auditable_entity_id, control_id)
+select
+  entities.id,
+  controls.id
+from link_rows
+join public.auditable_entities entities on entities.name = link_rows.entity_name
+join public.controls controls on controls.code = link_rows.control_code
+on conflict (auditable_entity_id, control_id) do nothing;
+
+with owner_candidates as (
+  select id, 1 as priority
+  from public.profiles
+  where lower(email) = 'manager@open-grc.local'
+
+  union all
+
+  select id, 2 as priority
+  from public.profiles
+  where lower(email) = 'admin@open-grc.local'
+
+  union all
+
+  select id, 3 as priority
+  from public.profiles
+),
+owner as (
+  select id
+  from owner_candidates
+  order by priority
+  limit 1
+),
+refs as (
+  select
+    owner.id as owner_id,
+    (select id from public.controls where code = 'IAM-001' limit 1) as control_id
+  from owner
+)
+insert into public.findings (
+  control_id,
+  title,
+  description,
+  status,
+  severity,
+  root_cause,
+  remediation_plan,
+  due_date,
+  owner_profile_id,
+  created_by,
+  updated_by
+)
+select
+  refs.control_id,
+  'Seed finding - Legacy VPN MFA exceptions remain active',
+  'Legacy VPN access still includes active MFA exceptions that need formal remediation and closure evidence.',
+  'open'::public.finding_status,
+  'high'::public.finding_severity,
+  'Exception handling is tracked manually and lacks a single closure workflow.',
+  'Remove remaining legacy exceptions and attach approval plus enrollment evidence.',
+  current_date + 21,
+  refs.owner_id,
+  refs.owner_id,
+  refs.owner_id
+from refs
+where refs.control_id is not null
+  and not exists (
+    select 1
+    from public.findings
+    where title = 'Seed finding - Legacy VPN MFA exceptions remain active'
+  );
+
+with owner_candidates as (
+  select id, 1 as priority
+  from public.profiles
+  where lower(email) = 'manager@open-grc.local'
+
+  union all
+
+  select id, 2 as priority
+  from public.profiles
+  where lower(email) = 'admin@open-grc.local'
+
+  union all
+
+  select id, 3 as priority
+  from public.profiles
+),
+owner as (
+  select id
+  from owner_candidates
+  order by priority
+  limit 1
+),
+period_seed as (
+  select extract(year from current_date)::integer as plan_year
+),
+refs as (
+  select
+    owner.id as owner_id,
+    period_seed.plan_year,
+    format('FY %s Internal Audit Plan', period_seed.plan_year) as plan_title
+  from owner
+  cross join period_seed
+)
+insert into public.audit_plans (
+  title,
+  plan_year,
+  cycle,
+  status,
+  owner_profile_id,
+  summary,
+  created_by,
+  updated_by
+)
+select
+  refs.plan_title,
+  refs.plan_year,
+  'annual'::public.audit_plan_cycle,
+  'approved'::public.audit_plan_status,
+  refs.owner_id,
+  'Seeded internal audit plan for access and third-party governance follow-up.',
+  refs.owner_id,
+  refs.owner_id
+from refs
+where not exists (
+  select 1
+  from public.audit_plans
+  where title = refs.plan_title
+    and plan_year = refs.plan_year
+);
+
+with owner_candidates as (
+  select id, 1 as priority
+  from public.profiles
+  where lower(email) = 'manager@open-grc.local'
+
+  union all
+
+  select id, 2 as priority
+  from public.profiles
+  where lower(email) = 'admin@open-grc.local'
+
+  union all
+
+  select id, 3 as priority
+  from public.profiles
+),
+owner as (
+  select id
+  from owner_candidates
+  order by priority
+  limit 1
+),
+refs as (
+  select
+    owner.id as owner_id,
+    (select id from public.audit_plans where title = format('FY %s Internal Audit Plan', extract(year from current_date)::integer) limit 1) as audit_plan_id,
+    (select id from public.auditable_entities where name = 'Identity & Access Management' limit 1) as auditable_entity_id,
+    (select id from public.risks where title = 'No MFA for legacy VPN users' limit 1) as risk_id
+  from owner
+)
+insert into public.audit_plan_items (
+  audit_plan_id,
+  topic,
+  auditable_entity_id,
+  risk_id,
+  status,
+  notes,
+  created_by,
+  updated_by
+)
+select
+  refs.audit_plan_id,
+  'VPN MFA exception governance review',
+  refs.auditable_entity_id,
+  refs.risk_id,
+  'planned'::public.audit_plan_item_status,
+  'Seeded audit item focused on exception approval, tracking, and retirement evidence.',
+  refs.owner_id,
+  refs.owner_id
+from refs
+where refs.audit_plan_id is not null
+  and not exists (
+    select 1
+    from public.audit_plan_items
+    where audit_plan_id = refs.audit_plan_id
+      and topic = 'VPN MFA exception governance review'
+  );
+
+with owner_candidates as (
+  select id, 1 as priority
+  from public.profiles
+  where lower(email) = 'manager@open-grc.local'
+
+  union all
+
+  select id, 2 as priority
+  from public.profiles
+  where lower(email) = 'admin@open-grc.local'
+
+  union all
+
+  select id, 3 as priority
+  from public.profiles
+),
+owner as (
+  select id
+  from owner_candidates
+  order by priority
+  limit 1
+),
+refs as (
+  select
+    owner.id as owner_id,
+    (select id from public.audit_plan_items where topic = 'VPN MFA exception governance review' limit 1) as audit_plan_item_id
+  from owner
+)
+insert into public.audit_engagements (
+  audit_plan_item_id,
+  title,
+  scope,
+  objectives,
+  lead_auditor_profile_id,
+  status,
+  planned_start_date,
+  planned_end_date,
+  summary,
+  created_by,
+  updated_by
+)
+select
+  refs.audit_plan_item_id,
+  'Seed audit engagement - VPN MFA exceptions',
+  'Review exception inventory, approval records, and current MFA rollout evidence for remaining legacy VPN accounts.',
+  'Confirm that approved exceptions are time-bound, tracked, and linked to active remediation actions.',
+  refs.owner_id,
+  'fieldwork'::public.audit_engagement_status,
+  current_date + 7,
+  current_date + 14,
+  'Seeded engagement linked to existing finding, action plan, and evidence records.',
+  refs.owner_id,
+  refs.owner_id
+from refs
+where refs.audit_plan_item_id is not null
+  and not exists (
+    select 1
+    from public.audit_engagements
+    where audit_plan_item_id = refs.audit_plan_item_id
+      and title = 'Seed audit engagement - VPN MFA exceptions'
+  );
+
+with refs as (
+  select
+    (select id from public.audit_engagements where title = 'Seed audit engagement - VPN MFA exceptions' limit 1) as audit_engagement_id,
+    (select id from public.findings where title = 'Seed finding - Legacy VPN MFA exceptions remain active' limit 1) as finding_id
+)
+insert into public.audit_engagement_findings (audit_engagement_id, finding_id)
+select
+  refs.audit_engagement_id,
+  refs.finding_id
+from refs
+where refs.audit_engagement_id is not null
+  and refs.finding_id is not null
+on conflict (audit_engagement_id, finding_id) do nothing;
+
+with refs as (
+  select
+    (select id from public.audit_engagements where title = 'Seed audit engagement - VPN MFA exceptions' limit 1) as audit_engagement_id,
+    (select id from public.action_plans where title = 'Enforce MFA on remaining legacy VPN accounts' limit 1) as action_plan_id
+)
+insert into public.audit_engagement_action_plans (audit_engagement_id, action_plan_id)
+select
+  refs.audit_engagement_id,
+  refs.action_plan_id
+from refs
+where refs.audit_engagement_id is not null
+  and refs.action_plan_id is not null
+on conflict (audit_engagement_id, action_plan_id) do nothing;
+
+with owner_candidates as (
+  select id, 1 as priority
+  from public.profiles
+  where lower(email) = 'manager@open-grc.local'
+
+  union all
+
+  select id, 2 as priority
+  from public.profiles
+  where lower(email) = 'admin@open-grc.local'
+
+  union all
+
+  select id, 3 as priority
+  from public.profiles
+),
+reviewer_candidates as (
+  select id, 1 as priority
+  from public.profiles
+  where lower(email) = 'contributor@open-grc.local'
+
+  union all
+
+  select id, 2 as priority
+  from public.profiles
+  where lower(email) = 'admin@open-grc.local'
+
+  union all
+
+  select id, 3 as priority
+  from public.profiles
+),
+owner as (
+  select id
+  from owner_candidates
+  order by priority
+  limit 1
+),
+reviewer as (
+  select id
+  from reviewer_candidates
+  order by priority
+  limit 1
+),
+refs as (
+  select
+    owner.id as owner_id,
+    reviewer.id as reviewer_id,
+    (select id from public.audit_engagements where title = 'Seed audit engagement - VPN MFA exceptions' limit 1) as audit_engagement_id,
+    (select id from public.evidence where title = 'Quarterly vulnerability report' limit 1) as evidence_id
+  from owner
+  cross join reviewer
+)
+insert into public.audit_workpapers (
+  audit_engagement_id,
+  title,
+  procedure,
+  conclusion,
+  reviewer_profile_id,
+  evidence_id,
+  created_by,
+  updated_by
+)
+select
+  refs.audit_engagement_id,
+  'Seed workpaper - Exception inventory walkthrough',
+  'Reviewed exception tickets, approval records, and the seeded evidence attachment to confirm open MFA rollout items.',
+  'Open exceptions remain visible and tied to an active remediation plan, but final closure evidence is still pending.',
+  refs.reviewer_id,
+  refs.evidence_id,
+  refs.owner_id,
+  refs.owner_id
+from refs
+where refs.audit_engagement_id is not null
+  and not exists (
+    select 1
+    from public.audit_workpapers
+    where audit_engagement_id = refs.audit_engagement_id
+      and title = 'Seed workpaper - Exception inventory walkthrough'
+  );

@@ -3,6 +3,9 @@ import path from "node:path";
 import { spawnSync } from "node:child_process";
 
 import { createClient } from "@supabase/supabase-js";
+import pg from "pg";
+
+const { Client: PgClient } = pg;
 
 function loadEnvFile(filePath) {
   if (!fs.existsSync(filePath)) {
@@ -57,6 +60,62 @@ function runSupabase(args) {
 
   if (typeof result.status === "number" && result.status !== 0) {
     process.exit(result.status);
+  }
+}
+
+function getLocalMigrationVersions() {
+  const migrationsDir = path.join(process.cwd(), "supabase", "migrations");
+
+  return fs
+    .readdirSync(migrationsDir)
+    .map((fileName) => {
+      const match = fileName.match(/^(\d{14})_/);
+      return match ? match[1] : null;
+    })
+    .filter(Boolean)
+    .sort();
+}
+
+async function getAppliedMigrationVersions(env) {
+  const client = new PgClient({
+    connectionString: env.DIRECT_URL,
+    ssl: { rejectUnauthorized: false },
+  });
+
+  await client.connect();
+
+  try {
+    const result = await client.query(
+      "select version from supabase_migrations.schema_migrations order by version",
+    );
+
+    return result.rows.map((row) => row.version);
+  } finally {
+    await client.end();
+  }
+}
+
+async function ensureMigrationsApplied(env) {
+  const localVersions = getLocalMigrationVersions();
+  const appliedVersions = await getAppliedMigrationVersions(env);
+  const pendingVersions = localVersions.filter((version) => !appliedVersions.includes(version));
+
+  if (pendingVersions.length === 0) {
+    return;
+  }
+
+  console.log(
+    `Pending migrations detected after push. Retrying once: ${pendingVersions.join(", ")}`,
+  );
+  runSupabase(["db", "push", "--db-url", env.DIRECT_URL, "--yes"]);
+
+  const appliedAfterRetry = await getAppliedMigrationVersions(env);
+  const remainingVersions = localVersions.filter((version) => !appliedAfterRetry.includes(version));
+
+  if (remainingVersions.length > 0) {
+    throw new Error(
+      `supabase db push did not apply migrations: ${remainingVersions.join(", ")}`,
+    );
   }
 }
 
@@ -397,6 +456,7 @@ async function main() {
 
   console.log("1/4 Apply migrations");
   runSupabase(["db", "push", "--db-url", env.DIRECT_URL, "--yes"]);
+  await ensureMigrationsApplied(env);
 
   console.log("2/4 Ensure test users and roles");
   await ensureUsersAndRoles(env);

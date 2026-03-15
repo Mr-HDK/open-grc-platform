@@ -106,6 +106,17 @@ Phase 1 foundation is implemented. This repository is no longer managed as a gre
 - Control Reviews module:
   - scheduled review tracking for controls
   - status, target date, and completion tracking
+- Auditable Entities module:
+  - auditable entity register with type, owner, status, parent, and description
+  - explicit links from auditable entities to risks, controls, assets, and third parties
+  - linked auditable entity visibility on risk/control/asset/third-party detail pages
+  - parent/child hierarchy support with organization-scoped CRUD
+- Audit Management module:
+  - annual and semiannual audit plans with scoped plan items linked to auditable entities or risks
+  - audit engagements with scope, objectives, dates, lead auditor, and status tracking
+  - linked findings and remediation actions reused from existing registers
+  - workpapers with reviewer assignment and optional evidence linkage
+  - manager-facing list filters by status, owner, and audit period
 - Control Testing & Findings module:
   - control test campaigns with period, tester, and result
   - automatic finding creation on failed tests
@@ -147,6 +158,8 @@ Guardrails:
 app/
   (auth)/login/
   dashboard/
+    auditable-entities/
+    audits/
     assets/
     policies/
     third-parties/
@@ -158,6 +171,8 @@ app/
     libraries/
     settings/
 components/
+  auditable-entities/
+  audits/
   assets/
   third-parties/
   policies/
@@ -170,6 +185,7 @@ components/
   ui/
 lib/
   audit/
+  audits/
   auth/
   libraries/
   permissions/
@@ -319,8 +335,10 @@ The workflow runs:
 
 - `tests/e2e/risks.create.spec.ts`, `tests/e2e/controls.create.spec.ts`, `tests/e2e/actions.create.spec.ts`, `tests/e2e/evidence.create.spec.ts`, `tests/e2e/frameworks.mapping.spec.ts`, `tests/e2e/libraries.bundles.spec.ts`, and `tests/e2e/settings.roles.spec.ts` skip automatically if required credentials are not set.
 - `tests/e2e/control-tests.findings.spec.ts` validates failed control test -> finding creation -> retest closure.
+- `tests/e2e/audits.lifecycle.spec.ts` validates audit plan -> engagement -> workpaper lifecycle plus list filtering.
 - `tests/e2e/risk-acceptances.lifecycle.spec.ts` validates manager create + revoke lifecycle.
 - `tests/e2e/policies.attestation.spec.ts` validates policy create -> publish -> acknowledge flow.
+- `tests/e2e/auditable-entities.lifecycle.spec.ts` validates auditable entity create/edit plus cross-link visibility from related detail pages.
 - `frameworks.mapping.spec.ts` requires admin credentials and at least one seeded control + framework requirement.
 - Framework mappings page is admin-only by design.
 - Libraries page is admin-only by design.
@@ -331,4 +349,4 @@ The workflow runs:
 - Expand admin lifecycle tooling (invite, deactivate, ownership transfer).
 - Expand reporting packs with richer filters and additional committee views.
 - Increase E2E coverage for policy governance, third-party review cadence, and report-pack exports.
-- Continue the next feature backlog with auditable entities and audit management core.
+- Deepen audit execution follow-up with reviewer workflow and richer committee outputs.

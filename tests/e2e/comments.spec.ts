@@ -3,6 +3,8 @@ import { expect, test } from "@playwright/test";
 import { credentialCandidates, signInWithCandidates } from "./utils/auth";
 
 test("admin can post a risk comment", async ({ page }) => {
+  test.setTimeout(90_000);
+
   const candidates = credentialCandidates({
     emails: [process.env.E2E_ADMIN_TEST_EMAIL, "admin@open-grc.local"],
     passwords: [process.env.E2E_ADMIN_TEST_PASSWORD, "ChangeMe123!"],
@@ -25,9 +27,15 @@ test("admin can post a risk comment", async ({ page }) => {
 
   await expect(page.getByRole("heading", { name: "Comments" })).toBeVisible({ timeout: 20_000 });
 
+  const commentText = `E2E comment ${Date.now()}`;
   const commentBox = page.getByPlaceholder("Add a comment...");
-  await commentBox.fill(`E2E comment ${Date.now()}`);
-  await page.getByRole("button", { name: "Post comment" }).click();
+  await commentBox.fill(commentText);
 
-  await expect(page.getByText("Comment posted.")).toBeVisible({ timeout: 20_000 });
+  await Promise.all([
+    page.waitForURL(/success=comment/, { timeout: 30_000 }),
+    page.getByRole("button", { name: "Post comment" }).click(),
+  ]);
+
+  await expect(page.getByText("Comment posted.")).toBeVisible({ timeout: 30_000 });
+  await expect(page.getByText(commentText)).toBeVisible({ timeout: 30_000 });
 });

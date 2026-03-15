@@ -6,8 +6,10 @@ import {
   createThirdPartyReviewAction,
 } from "@/app/dashboard/third-parties/actions";
 import { AuditLogSection } from "@/components/audit/audit-log-section";
+import { LinkedAuditableEntitiesSection } from "@/components/auditable-entities/linked-auditable-entities-section";
 import { buttonVariants } from "@/components/ui/button";
 import { FeedbackAlert } from "@/components/ui/feedback-alert";
+import { getAuditableEntitiesForThirdParty } from "@/lib/auditable-entities/links";
 import { getAuditEntries } from "@/lib/audit/log";
 import { requireSessionProfile } from "@/lib/auth/profile";
 import { hasRole } from "@/lib/permissions/roles";
@@ -200,11 +202,12 @@ export default async function ThirdPartyDetailPage({
     notFound();
   }
 
-  const [owner, linkedRisks, linkedControls, linkedActions, reviews, reviewers, auditEntries] = await Promise.all([
+  const [owner, linkedRisks, linkedControls, linkedActions, linkedAuditableEntities, reviews, reviewers, auditEntries] = await Promise.all([
     getOwner(thirdParty.owner_profile_id),
     getLinkedRisks(thirdParty.id),
     getLinkedControls(thirdParty.id),
     getLinkedActions(thirdParty.id),
+    getAuditableEntitiesForThirdParty(thirdParty.id),
     getReviews(thirdParty.id),
     createSupabaseServerClient().then((supabase) =>
       supabase
@@ -370,6 +373,14 @@ export default async function ThirdPartyDetailPage({
           </ul>
         )}
       </section>
+
+      <LinkedAuditableEntitiesSection
+        title="Linked auditable entities"
+        items={linkedAuditableEntities}
+        emptyMessage="No auditable entities linked to this third party."
+        canCreate={canEdit}
+        createHref={`/dashboard/auditable-entities/new?thirdPartyId=${thirdParty.id}`}
+      />
 
       <section className="rounded-xl border bg-card p-6">
         <div className="flex flex-wrap items-center justify-between gap-2">

@@ -3,6 +3,8 @@ import { expect, test } from "@playwright/test";
 import { credentialCandidates, signInWithCandidates } from "./utils/auth";
 
 test("contributor can create and review a third-party", async ({ page }) => {
+  test.setTimeout(90_000);
+
   const vendorName = `Playwright vendor ${Date.now()}`;
   const candidates = credentialCandidates({
     emails: [

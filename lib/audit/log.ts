@@ -13,6 +13,11 @@ export type AuditEntityType =
   | "asset"
   | "third_party"
   | "third_party_review"
+  | "auditable_entity"
+  | "audit_plan"
+  | "audit_plan_item"
+  | "audit_engagement"
+  | "audit_workpaper"
   | "policy"
   | "policy_attestation";
 export type AuditAction = "create" | "update" | "soft_delete";

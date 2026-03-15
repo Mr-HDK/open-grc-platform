@@ -3,8 +3,10 @@ import { notFound } from "next/navigation";
 
 import { archiveAssetAction } from "@/app/dashboard/assets/actions";
 import { AuditLogSection } from "@/components/audit/audit-log-section";
+import { LinkedAuditableEntitiesSection } from "@/components/auditable-entities/linked-auditable-entities-section";
 import { buttonVariants } from "@/components/ui/button";
 import { FeedbackAlert } from "@/components/ui/feedback-alert";
+import { getAuditableEntitiesForAsset } from "@/lib/auditable-entities/links";
 import { getAuditEntries } from "@/lib/audit/log";
 import { requireSessionProfile } from "@/lib/auth/profile";
 import { hasRole } from "@/lib/permissions/roles";
@@ -133,10 +135,11 @@ export default async function AssetDetailPage({
     notFound();
   }
 
-  const [owner, linkedRisks, linkedControls, auditEntries] = await Promise.all([
+  const [owner, linkedRisks, linkedControls, linkedAuditableEntities, auditEntries] = await Promise.all([
     getOwner(asset.owner_profile_id),
     getLinkedRisks(asset.id),
     getLinkedControls(asset.id),
+    getAuditableEntitiesForAsset(asset.id),
     getAuditEntries("asset", asset.id),
   ]);
 
@@ -247,6 +250,14 @@ export default async function AssetDetailPage({
           </ul>
         )}
       </section>
+
+      <LinkedAuditableEntitiesSection
+        title="Linked auditable entities"
+        items={linkedAuditableEntities}
+        emptyMessage="No auditable entities linked to this asset."
+        canCreate={canEdit}
+        createHref={`/dashboard/auditable-entities/new?assetId=${asset.id}`}
+      />
 
       <AuditLogSection items={auditEntries} />
     </div>

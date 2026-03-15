@@ -14,6 +14,8 @@ const baseNavLinks = [
   { href: "/dashboard/risk-acceptances", label: "Risk acceptances" },
   { href: "/dashboard/controls", label: "Controls" },
   { href: "/dashboard/assets", label: "Assets" },
+  { href: "/dashboard/auditable-entities", label: "Auditable entities" },
+  { href: "/dashboard/audits", label: "Audits" },
   { href: "/dashboard/control-reviews", label: "Control reviews" },
   { href: "/dashboard/control-tests", label: "Control tests" },
   { href: "/dashboard/findings", label: "Findings" },

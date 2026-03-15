@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 
 import { archiveControlAction } from "@/app/dashboard/controls/actions";
 import { AuditLogSection } from "@/components/audit/audit-log-section";
+import { LinkedAuditableEntitiesSection } from "@/components/auditable-entities/linked-auditable-entities-section";
 import { buttonVariants } from "@/components/ui/button";
 import { CommentsSection, type CommentItem } from "@/components/comments/comments-section";
 import { ControlMetadataGrid } from "@/components/controls/control-metadata-grid";
@@ -11,6 +12,7 @@ import { LinkedRisksSection } from "@/components/controls/linked-risks-section";
 import { ControlFrameworkMappingsSection } from "@/components/frameworks/control-framework-mappings-section";
 import { FeedbackAlert } from "@/components/ui/feedback-alert";
 import { EvidenceListSection } from "@/components/evidence/evidence-list-section";
+import { getAuditableEntitiesForControl } from "@/lib/auditable-entities/links";
 import { getAuditEntries } from "@/lib/audit/log";
 import { requireSessionProfile } from "@/lib/auth/profile";
 import { getEvidenceSignedUrlById } from "@/lib/evidence/signed-url";
@@ -334,11 +336,12 @@ export default async function ControlDetailPage({
     notFound();
   }
 
-  const [owner, linkedRisks, linkedAssets, evidence, frameworkMappings, auditEntries, comments, reviews, controlTests, findings] =
+  const [owner, linkedRisks, linkedAssets, linkedAuditableEntities, evidence, frameworkMappings, auditEntries, comments, reviews, controlTests, findings] =
     await Promise.all([
     getOwner(control.owner_profile_id),
     getLinkedRisks(control.id),
     getLinkedAssets(control.id),
+    getAuditableEntitiesForControl(control.id),
     getControlEvidence(control.id),
     getFrameworkMappings(control.id),
     getAuditEntries("control", control.id),
@@ -429,6 +432,14 @@ export default async function ControlDetailPage({
           </ul>
         )}
       </section>
+
+      <LinkedAuditableEntitiesSection
+        title="Linked auditable entities"
+        items={linkedAuditableEntities}
+        emptyMessage="No auditable entities linked to this control."
+        canCreate={canEdit}
+        createHref={`/dashboard/auditable-entities/new?controlId=${control.id}`}
+      />
 
       <ControlFrameworkMappingsSection items={frameworkMappings} />
 

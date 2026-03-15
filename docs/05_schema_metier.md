@@ -174,6 +174,150 @@ Champs:
 - created_at
 - updated_at
 
+## auditable_entities
+
+Champs:
+- id
+- organization_id
+- name
+- entity_type (business_unit, process, application, product, vendor, legal_entity, other)
+- status (active, inactive, retired)
+- owner_profile_id nullable
+- parent_entity_id nullable
+- description nullable
+- created_by nullable
+- updated_by nullable
+- created_at
+- updated_at
+- deleted_at
+
+## auditable_entity_risks
+
+Table pivot.
+
+Champs:
+- auditable_entity_id
+- risk_id
+- created_at
+
+## auditable_entity_controls
+
+Table pivot.
+
+Champs:
+- auditable_entity_id
+- control_id
+- created_at
+
+## auditable_entity_assets
+
+Table pivot.
+
+Champs:
+- auditable_entity_id
+- asset_id
+- created_at
+
+## auditable_entity_third_parties
+
+Table pivot.
+
+Champs:
+- auditable_entity_id
+- third_party_id
+- created_at
+
+## audit_plans
+
+Champs:
+- id
+- organization_id
+- title
+- plan_year
+- cycle (annual, semiannual)
+- status (draft, approved, in_progress, closed)
+- owner_profile_id nullable
+- summary nullable
+- created_by nullable
+- updated_by nullable
+- created_at
+- updated_at
+- deleted_at
+
+## audit_plan_items
+
+Champs:
+- id
+- organization_id
+- audit_plan_id
+- topic
+- auditable_entity_id nullable
+- risk_id nullable
+- status (planned, in_progress, completed, deferred)
+- notes nullable
+- created_by nullable
+- updated_by nullable
+- created_at
+- updated_at
+- deleted_at
+
+## audit_engagements
+
+Champs:
+- id
+- organization_id
+- audit_plan_item_id
+- title
+- scope
+- objectives
+- lead_auditor_profile_id nullable
+- status (planned, fieldwork, reporting, completed, cancelled)
+- planned_start_date
+- planned_end_date
+- actual_start_date nullable
+- actual_end_date nullable
+- summary nullable
+- created_by nullable
+- updated_by nullable
+- created_at
+- updated_at
+- deleted_at
+
+## audit_workpapers
+
+Champs:
+- id
+- organization_id
+- audit_engagement_id
+- title
+- procedure
+- conclusion
+- reviewer_profile_id nullable
+- evidence_id nullable
+- created_by nullable
+- updated_by nullable
+- created_at
+- updated_at
+- deleted_at
+
+## audit_engagement_findings
+
+Table pivot.
+
+Champs:
+- audit_engagement_id
+- finding_id
+- created_at
+
+## audit_engagement_action_plans
+
+Table pivot.
+
+Champs:
+- audit_engagement_id
+- action_plan_id
+- created_at
+
 ## policies
 
 Champs:
@@ -307,7 +451,22 @@ Champs:
 - organization 1..n profiles
 - organization 1..n risks
 - organization 1..n controls
+- organization 1..n auditable_entities
+- organization 1..n audit_plans
 - risk n..n controls via risk_controls
+- auditable_entity n..n risks via auditable_entity_risks
+- auditable_entity n..n controls via auditable_entity_controls
+- auditable_entity n..n assets via auditable_entity_assets
+- auditable_entity n..n third_parties via auditable_entity_third_parties
+- auditable_entity 1..n child auditable_entities via parent_entity_id
+- audit_plan 1..n audit_plan_items
+- audit_plan_item 1..n audit_engagements
+- audit_plan_item 0..1 auditable_entity
+- audit_plan_item 0..1 risk
+- audit_engagement 1..n audit_workpapers
+- audit_engagement n..n findings via audit_engagement_findings
+- audit_engagement n..n action_plans via audit_engagement_action_plans
+- audit_workpaper 0..1 evidence
 - risk 1..n action_plans
 - control 1..n action_plans
 - risk 1..n evidence

@@ -3,10 +3,12 @@ import { notFound } from "next/navigation";
 
 import { archiveRiskAction } from "@/app/dashboard/risks/actions";
 import { AuditLogSection } from "@/components/audit/audit-log-section";
+import { LinkedAuditableEntitiesSection } from "@/components/auditable-entities/linked-auditable-entities-section";
 import { CommentsSection, type CommentItem } from "@/components/comments/comments-section";
 import { FeedbackAlert } from "@/components/ui/feedback-alert";
 import { buttonVariants } from "@/components/ui/button";
 import { EvidenceListSection } from "@/components/evidence/evidence-list-section";
+import { getAuditableEntitiesForRisk } from "@/lib/auditable-entities/links";
 import { getAuditEntries } from "@/lib/audit/log";
 import { requireSessionProfile } from "@/lib/auth/profile";
 import { getEvidenceSignedUrlById } from "@/lib/evidence/signed-url";
@@ -239,10 +241,11 @@ export default async function RiskDetailPage({
     notFound();
   }
 
-  const [owner, linkedControls, linkedAssets, linkedActionPlans, evidence, auditEntries, comments, riskAcceptances] = await Promise.all([
+  const [owner, linkedControls, linkedAssets, linkedAuditableEntities, linkedActionPlans, evidence, auditEntries, comments, riskAcceptances] = await Promise.all([
     getOwner(risk.owner_profile_id),
     getLinkedControls(risk.id),
     getLinkedAssets(risk.id),
+    getAuditableEntitiesForRisk(risk.id),
     getLinkedActionPlans(risk.id),
     getRiskEvidence(risk.id),
     getAuditEntries("risk", risk.id),
@@ -423,6 +426,14 @@ export default async function RiskDetailPage({
           </ul>
         )}
       </section>
+
+      <LinkedAuditableEntitiesSection
+        title="Linked auditable entities"
+        items={linkedAuditableEntities}
+        emptyMessage="No auditable entities linked to this risk."
+        canCreate={canEdit}
+        createHref={`/dashboard/auditable-entities/new?riskId=${risk.id}`}
+      />
 
       <section className="rounded-xl border bg-card p-6">
         <h2 className="text-lg font-semibold tracking-tight">Linked action plans</h2>

@@ -69,6 +69,8 @@ La base actuelle couvre:
 - revues periodiques des controles (statut + date cible)
 - campagnes de test des controles + constats (findings)
 - acceptations de risque (justification, approbateur, expiration, revocation)
+- entites auditables (scope simple, parent optionnel, liens vers risques/controles/actifs/tiers)
+- pilotage d'audits internes (plans annuels/semestriels, engagements, workpapers, liens vers findings/actions/preuves)
 
 ## 6. Phase actuelle
 
@@ -116,6 +118,7 @@ La phase courante vise a etendre la base avec les chantiers suivants:
 
 - reduction du temps de mise en place d'un registre exploitable
 - preparation plus rapide d'un reporting management ou audit
+- cadrage et execution plus rapide d'un audit interne simple
 - meilleure administrabilite de l'application
 - meilleure reutilisation via packs ou imports
 - adoption par une equipe pilote sur un usage reel
