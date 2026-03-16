@@ -10,6 +10,12 @@ type OptionRow = {
   code?: string;
 };
 
+type EvidenceRequestRow = {
+  id: string;
+  title: string;
+  control_id: string;
+};
+
 export default async function NewEvidencePage({
   searchParams,
 }: {
@@ -18,13 +24,15 @@ export default async function NewEvidencePage({
     riskId?: string;
     controlId?: string;
     actionPlanId?: string;
+    controlEvidenceRequestId?: string;
   }>;
 }) {
-  await requireSessionProfile("contributor");
+  const profile = await requireSessionProfile("contributor");
   const params = await searchParams;
 
   const supabase = await createSupabaseServerClient();
-  const [{ data: risks }, { data: controls }, { data: actionPlans }] = await Promise.all([
+  const [{ data: risks }, { data: controls }, { data: actionPlans }, { data: evidenceRequest }] =
+    await Promise.all([
     supabase
       .from("risks")
       .select("id, title")
@@ -46,7 +54,16 @@ export default async function NewEvidencePage({
       .order("updated_at", { ascending: false })
       .limit(25)
       .returns<OptionRow[]>(),
-  ]);
+    params.controlEvidenceRequestId
+      ? supabase
+          .from("control_evidence_requests")
+          .select("id, title, control_id")
+          .eq("id", params.controlEvidenceRequestId)
+          .eq("organization_id", profile.organizationId)
+          .is("deleted_at", null)
+          .maybeSingle<EvidenceRequestRow>()
+      : Promise.resolve({ data: null as EvidenceRequestRow | null }),
+    ]);
 
   return (
     <div className="space-y-4">
@@ -70,9 +87,11 @@ export default async function NewEvidencePage({
         }))}
         defaults={{
           riskId: params.riskId,
-          controlId: params.controlId,
+          controlId: evidenceRequest?.control_id ?? params.controlId,
           actionPlanId: params.actionPlanId,
+          controlEvidenceRequestId: params.controlEvidenceRequestId,
         }}
+        requestContext={evidenceRequest ? { title: evidenceRequest.title } : null}
         error={params.error ? decodeURIComponent(params.error) : null}
       />
     </div>

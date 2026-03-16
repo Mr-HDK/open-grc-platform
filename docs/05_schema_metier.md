@@ -92,6 +92,50 @@ Champs:
 - updated_at
 - deleted_at
 
+## control_attestations
+
+Champs:
+- id
+- organization_id
+- control_id
+- cycle_name
+- due_date
+- status (pending, submitted, reviewed)
+- owner_profile_id nullable
+- attested_effectiveness_status nullable
+- owner_comment nullable
+- attested_at nullable
+- reviewer_profile_id nullable
+- review_comment nullable
+- reviewed_at nullable
+- created_by nullable
+- updated_by nullable
+- created_at
+- updated_at
+- deleted_at
+
+## control_evidence_requests
+
+Champs:
+- id
+- organization_id
+- control_id
+- control_attestation_id nullable
+- title
+- description nullable
+- status (requested, submitted, accepted, rejected, waived)
+- due_date
+- owner_profile_id nullable
+- requested_by_profile_id nullable
+- evidence_id nullable
+- response_notes nullable
+- review_comment nullable
+- created_by nullable
+- updated_by nullable
+- created_at
+- updated_at
+- deleted_at
+
 ## asset_risks
 
 Table pivot.

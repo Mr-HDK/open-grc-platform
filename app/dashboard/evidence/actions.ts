@@ -24,6 +24,7 @@ function parseEvidencePayload(formData: FormData) {
     riskId: formData.get("riskId"),
     controlId: formData.get("controlId"),
     actionPlanId: formData.get("actionPlanId"),
+    controlEvidenceRequestId: formData.get("controlEvidenceRequestId"),
   });
 }
 
@@ -47,6 +48,16 @@ function getEvidenceFile(formData: FormData) {
 
 type IdRow = {
   id: string;
+};
+
+type EvidenceInsertRow = {
+  id: string;
+};
+
+type EvidenceRequestRow = {
+  id: string;
+  control_id: string;
+  status: "requested" | "submitted" | "accepted" | "rejected" | "waived";
 };
 
 async function validateEvidenceLinks(input: {
@@ -101,6 +112,26 @@ async function validateEvidenceLinks(input: {
   return null;
 }
 
+async function getControlEvidenceRequest(
+  requestId: string | null,
+  organizationId: string,
+) {
+  if (!requestId) {
+    return null;
+  }
+
+  const supabase = await createSupabaseServerClient();
+  const { data } = await supabase
+    .from("control_evidence_requests")
+    .select("id, control_id, status")
+    .eq("id", requestId)
+    .eq("organization_id", organizationId)
+    .is("deleted_at", null)
+    .maybeSingle<EvidenceRequestRow>();
+
+  return data;
+}
+
 export async function createEvidenceAction(formData: FormData) {
   const profile = await requireSessionProfile("contributor");
 
@@ -112,13 +143,39 @@ export async function createEvidenceAction(formData: FormData) {
     );
   }
 
+  const evidenceRequest = await getControlEvidenceRequest(
+    parsed.data.controlEvidenceRequestId,
+    profile.organizationId,
+  );
+
+  if (parsed.data.controlEvidenceRequestId && !evidenceRequest) {
+    redirect(
+      `/dashboard/evidence/new?error=${encodeMessage("Selected evidence request does not exist.")}`,
+    );
+  }
+
+  if (
+    evidenceRequest &&
+    parsed.data.controlId &&
+    parsed.data.controlId !== evidenceRequest.control_id
+  ) {
+    redirect(
+      `/dashboard/evidence/new?error=${encodeMessage("Evidence request must use the same control.")}`,
+    );
+  }
+
+  const normalizedPayload = {
+    ...parsed.data,
+    controlId: evidenceRequest?.control_id ?? parsed.data.controlId,
+  };
+
   const fileResult = getEvidenceFile(formData);
 
   if (fileResult.error || !fileResult.file) {
     redirect(`/dashboard/evidence/new?error=${encodeMessage(fileResult.error, "Invalid file.")}`);
   }
 
-  const linksError = await validateEvidenceLinks(parsed.data, profile.organizationId);
+  const linksError = await validateEvidenceLinks(normalizedPayload, profile.organizationId);
 
   if (linksError) {
     redirect(`/dashboard/evidence/new?error=${encodeMessage(linksError)}`);
@@ -139,23 +196,51 @@ export async function createEvidenceAction(formData: FormData) {
     redirect(`/dashboard/evidence/new?error=${encodeMessage(uploadError.message)}`);
   }
 
-  const { error: insertError } = await supabase.from("evidence").insert(
-    buildEvidenceMutation(
-      parsed.data,
-      {
-        fileName: file.name,
-        filePath: path,
-        mimeType: file.type || "application/octet-stream",
-        fileSize: file.size,
-      },
-      profile.id,
-      profile.organizationId,
-    ),
-  );
+  const { data: insertedEvidence, error: insertError } = await supabase
+    .from("evidence")
+    .insert(
+      buildEvidenceMutation(
+        normalizedPayload,
+        {
+          fileName: file.name,
+          filePath: path,
+          mimeType: file.type || "application/octet-stream",
+          fileSize: file.size,
+        },
+        profile.id,
+        profile.organizationId,
+      ),
+    )
+    .select("id")
+    .single<EvidenceInsertRow>();
 
-  if (insertError) {
+  if (insertError || !insertedEvidence) {
     await supabase.storage.from("evidence").remove([path]);
     redirect(`/dashboard/evidence/new?error=${encodeMessage(insertError.message)}`);
+  }
+
+  if (evidenceRequest) {
+    const nextStatus =
+      evidenceRequest.status === "requested" ? "submitted" : evidenceRequest.status;
+
+    const { error: requestError } = await supabase
+      .from("control_evidence_requests")
+      .update({
+        evidence_id: insertedEvidence.id,
+        status: nextStatus,
+        updated_by: profile.id,
+      })
+      .eq("id", evidenceRequest.id)
+      .eq("organization_id", profile.organizationId)
+      .is("deleted_at", null);
+
+    if (requestError) {
+      redirect(
+        `/dashboard/controls/${evidenceRequest.control_id}?error=${encodeMessage(requestError.message, "Evidence was uploaded but request linking failed.")}`,
+      );
+    }
+
+    redirect(`/dashboard/controls/${evidenceRequest.control_id}?success=evidence_uploaded`);
   }
 
   redirect("/dashboard/evidence");

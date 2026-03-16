@@ -3,9 +3,8 @@ import { z } from "zod";
 export const MAX_EVIDENCE_FILE_SIZE_BYTES = 25 * 1024 * 1024;
 
 const optionalUuidField = z
-  .string()
-  .trim()
-  .optional()
+  .union([z.string(), z.null(), z.undefined()])
+  .transform((value) => (typeof value === "string" ? value.trim() : ""))
   .transform((value) => (value ? value : null))
   .refine((value) => value === null || z.string().uuid().safeParse(value).success, {
     message: "Linked record identifier must be a valid UUID.",
@@ -23,11 +22,21 @@ export const evidenceFormSchema = z
     riskId: optionalUuidField,
     controlId: optionalUuidField,
     actionPlanId: optionalUuidField,
+    controlEvidenceRequestId: optionalUuidField,
   })
-  .refine((payload) => Boolean(payload.riskId || payload.controlId || payload.actionPlanId), {
-    path: ["riskId"],
-    message: "Link evidence to at least one risk, control, or action plan.",
-  });
+  .refine(
+    (payload) =>
+      Boolean(
+        payload.riskId ||
+          payload.controlId ||
+          payload.actionPlanId ||
+          payload.controlEvidenceRequestId,
+      ),
+    {
+      path: ["riskId"],
+      message: "Link evidence to at least one risk, control, action plan, or evidence request.",
+    },
+  );
 
 export const evidenceIdSchema = z.string().uuid();
 

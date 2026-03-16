@@ -18,7 +18,11 @@ type EvidenceFormProps = {
     riskId?: string | null;
     controlId?: string | null;
     actionPlanId?: string | null;
+    controlEvidenceRequestId?: string | null;
   };
+  requestContext?: {
+    title: string;
+  } | null;
   error?: string | null;
 };
 
@@ -28,6 +32,7 @@ export function EvidenceForm({
   controlOptions,
   actionPlanOptions,
   defaults,
+  requestContext,
   error,
 }: EvidenceFormProps) {
   return (
@@ -37,8 +42,21 @@ export function EvidenceForm({
       className="space-y-6 rounded-xl border bg-card p-6 shadow-sm"
     >
       {error ? <FeedbackAlert id="evidence-form-error" message={error} /> : null}
+      {defaults?.controlEvidenceRequestId ? (
+        <input
+          type="hidden"
+          name="controlEvidenceRequestId"
+          value={defaults.controlEvidenceRequestId}
+        />
+      ) : null}
 
       <div className="grid gap-5 md:grid-cols-2">
+        {requestContext ? (
+          <div className="rounded-lg border border-sky-200 bg-sky-50 px-3 py-2 text-sm text-sky-900 md:col-span-2">
+            Uploading evidence for request: {requestContext.title}
+          </div>
+        ) : null}
+
         <div className="space-y-2 md:col-span-2">
           <label htmlFor="title" className="text-sm font-medium">
             Title

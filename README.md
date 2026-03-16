@@ -122,6 +122,12 @@ Phase 1 foundation is implemented. This repository is no longer managed as a gre
   - automatic finding creation on failed tests
   - findings register with severity, remediation, owner, and due date
   - retest flow to close findings when tests pass
+- Control Assurance module:
+  - owner-focused attestation cycles per control with submission and review notes
+  - evidence requests tied to controls and optional attestation cycles
+  - existing or newly uploaded evidence can be linked directly to a request
+  - control detail assurance view combining attestations, evidence requests, tests, and findings
+  - manager dashboard for overdue controls, missing attestations, missing evidence, and healthy vs at-risk posture
 - Risk Acceptances module:
   - manager/admin approval records with mandatory justification
   - optional links to risk control/action scope
@@ -171,6 +177,7 @@ app/
     auditable-entities/
     audits/
     assets/
+    control-assurance/
     policies/
     third-parties/
     risks/
@@ -185,13 +192,13 @@ components/
   auditable-entities/
   audits/
   assets/
+  controls/
   issues/
   third-parties/
   policies/
   audit/
   layout/
   risks/
-  controls/
   actions/
   evidence/
   ui/
