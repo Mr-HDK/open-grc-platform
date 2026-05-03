@@ -82,9 +82,11 @@ Phase 1 foundation is implemented. This repository is no longer managed as a gre
   - invite, deactivate, and ownership transfer flows
 - Reporting module:
   - preset report packs for management, audit committee, and compliance review
+  - saved reporting views for reusable committee and management filter sets
+  - board-ready sections driven by live data: top risks, open issues, overdue actions, control health, framework gaps, critical vendors, policy coverage, and audit state
   - printable reporting view for browser print / PDF export
   - JSON pack export for filtered report presets
-  - CSV/JSON exports for risks, controls, action plans, and findings
+  - CSV/JSON exports for risks, issues, action plans, findings, controls, control health, framework gaps, vendors, policy coverage, and audit engagements
   - CSV/JSON imports for risks and controls with validation
 - Collaboration module:
   - comments on risks, controls, and action plans
@@ -368,6 +370,5 @@ The workflow runs:
 ## Next-phase roadmap
 
 - Expand admin lifecycle tooling (invite, deactivate, ownership transfer).
-- Expand reporting packs with richer filters and additional committee views.
 - Increase E2E coverage for policy governance, third-party review cadence, and report-pack exports.
 - Deepen audit execution follow-up with reviewer workflow and richer committee outputs.

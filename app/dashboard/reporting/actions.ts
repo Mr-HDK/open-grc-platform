@@ -1,11 +1,13 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { requireSessionProfile } from "@/lib/auth/profile";
 import { toUserErrorMessage } from "@/lib/forms/error-message";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { buildControlMutation, controlFormSchema } from "@/lib/validators/control";
+import { reportingSavedViewSchema } from "@/lib/validators/reporting";
 import { buildRiskMutation, riskFormSchema } from "@/lib/validators/risk";
 
 const MAX_FILE_SIZE_BYTES = 1_000_000;
@@ -91,6 +93,89 @@ function getRowValue(row: Record<string, unknown>, key: string) {
   }
 
   return String(value).trim();
+}
+
+function buildReportingQuery(input: {
+  preset: string;
+  ownerId: string | null;
+  horizonDays: number;
+  issueType: string | null;
+  severity: string | null;
+  statusFocus: string;
+}) {
+  const params = new URLSearchParams({
+    preset: input.preset,
+    horizon: String(input.horizonDays),
+  });
+
+  if (input.ownerId) {
+    params.set("owner", input.ownerId);
+  }
+  if (input.issueType) {
+    params.set("issueType", input.issueType);
+  }
+  if (input.severity) {
+    params.set("severity", input.severity);
+  }
+  if (input.statusFocus && input.statusFocus !== "all") {
+    params.set("statusFocus", input.statusFocus);
+  }
+
+  return params.toString();
+}
+
+export async function saveReportingViewAction(formData: FormData) {
+  const actor = await requireSessionProfile("manager");
+  const parsed = reportingSavedViewSchema.safeParse({
+    name: formData.get("name"),
+    preset: formData.get("preset"),
+    ownerId: formData.get("ownerId"),
+    horizonDays: formData.get("horizonDays"),
+    issueType: formData.get("issueType"),
+    severity: formData.get("severity"),
+    statusFocus: formData.get("statusFocus"),
+  });
+
+  if (!parsed.success) {
+    redirect(`/dashboard/reporting?error=${encodeMessage(parsed.error.issues[0]?.message)}`);
+  }
+
+  const supabase = await createSupabaseServerClient();
+  const { data, error } = await supabase
+    .from("reporting_saved_views")
+    .insert({
+      organization_id: actor.organizationId,
+      name: parsed.data.name,
+      preset: parsed.data.preset,
+      owner_profile_id: parsed.data.ownerId,
+      horizon_days: parsed.data.horizonDays,
+      issue_type: parsed.data.issueType,
+      severity: parsed.data.severity,
+      status_focus: parsed.data.statusFocus,
+      created_by: actor.id,
+      updated_by: actor.id,
+    })
+    .select("id")
+    .single();
+
+  if (error || !data) {
+    redirect(`/dashboard/reporting?error=${encodeMessage(error?.message)}`);
+  }
+
+  revalidatePath("/dashboard/reporting");
+
+  const query = buildReportingQuery({
+    preset: parsed.data.preset,
+    ownerId: parsed.data.ownerId,
+    horizonDays: parsed.data.horizonDays,
+    issueType: parsed.data.issueType,
+    severity: parsed.data.severity,
+    statusFocus: parsed.data.statusFocus,
+  });
+
+  redirect(
+    `/dashboard/reporting?view=${data.id}&${query}&success=${encodeURIComponent(`Saved view "${parsed.data.name}".`)}`,
+  );
 }
 
 export async function importRisksAction(formData: FormData) {

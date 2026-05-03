@@ -531,6 +531,24 @@ Champs:
 - updated_at
 - deleted_at
 
+## reporting_saved_views
+
+Champs:
+- id
+- organization_id
+- name
+- preset (management, audit_committee, compliance)
+- owner_profile_id nullable
+- horizon_days
+- issue_type nullable
+- severity nullable
+- status_focus (all, attention_required, overdue, resolved)
+- created_by nullable
+- updated_by nullable
+- created_at
+- updated_at
+- deleted_at
+
 ## issues
 
 Champs:

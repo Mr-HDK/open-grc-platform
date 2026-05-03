@@ -1,6 +1,10 @@
 import Link from "next/link";
 
-import { importControlsAction, importRisksAction } from "@/app/dashboard/reporting/actions";
+import {
+  importControlsAction,
+  importRisksAction,
+  saveReportingViewAction,
+} from "@/app/dashboard/reporting/actions";
 import { ReportPackView } from "@/components/reporting/report-pack-view";
 import { buttonVariants } from "@/components/ui/button";
 import { FeedbackAlert } from "@/components/ui/feedback-alert";
@@ -11,6 +15,8 @@ import {
   reportingHorizonOptions,
 } from "@/lib/reporting/packs";
 import { cn } from "@/lib/utils/cn";
+import { issueSeverityOptions, issueTypeOptions } from "@/lib/validators/issue";
+import { reportingStatusFocusOptions } from "@/lib/validators/reporting";
 
 const riskHeaderSample = "title,description,category,impact,likelihood,status,due_date,owner_email";
 const controlHeaderSample =
@@ -23,14 +29,44 @@ const datasetExports = [
     description: "Full risk register export for audit and management review.",
   },
   {
-    id: "controls",
-    title: "Controls",
-    description: "Control catalog export including review cadence and effectiveness.",
+    id: "issues",
+    title: "Issues",
+    description: "Unified issue register export for committee and remediation review.",
   },
   {
     id: "actions",
     title: "Action plans",
     description: "Remediation backlog export for overdue and ownership analysis.",
+  },
+  {
+    id: "control_health",
+    title: "Control health",
+    description: "Derived assurance posture with overdue attestations, evidence, and findings.",
+  },
+  {
+    id: "framework_gaps",
+    title: "Framework gaps",
+    description: "Requirement coverage and gap-rate export for compliance review.",
+  },
+  {
+    id: "vendors",
+    title: "Critical vendors",
+    description: "Third-party review posture, renewal horizon, and ownership view.",
+  },
+  {
+    id: "policy_coverage",
+    title: "Policy coverage",
+    description: "Campaign coverage and overdue attestation dataset.",
+  },
+  {
+    id: "audits",
+    title: "Audit engagements",
+    description: "Audit plan execution and engagement status export.",
+  },
+  {
+    id: "controls",
+    title: "Controls",
+    description: "Control catalog export including review cadence and effectiveness.",
   },
   {
     id: "findings",
@@ -39,7 +75,14 @@ const datasetExports = [
   },
 ] as const;
 
-function buildPackQuery(input: { preset: string; ownerId: string; horizonDays: number }) {
+function buildPackQuery(input: {
+  preset: string;
+  ownerId: string;
+  horizonDays: number;
+  issueType: string;
+  severity: string;
+  statusFocus: string;
+}) {
   const query = new URLSearchParams({
     preset: input.preset,
     horizon: String(input.horizonDays),
@@ -47,6 +90,15 @@ function buildPackQuery(input: { preset: string; ownerId: string; horizonDays: n
 
   if (input.ownerId) {
     query.set("owner", input.ownerId);
+  }
+  if (input.issueType) {
+    query.set("issueType", input.issueType);
+  }
+  if (input.severity) {
+    query.set("severity", input.severity);
+  }
+  if (input.statusFocus !== "all") {
+    query.set("statusFocus", input.statusFocus);
   }
 
   return query.toString();
@@ -59,13 +111,17 @@ export default async function ReportingPage({
     preset?: string;
     owner?: string;
     horizon?: string;
+    issueType?: string;
+    severity?: string;
+    statusFocus?: string;
+    view?: string;
     error?: string;
     success?: string;
   }>;
 }) {
   const profile = await requireSessionProfile("manager");
   const params = await searchParams;
-  const { filters, ownerOptions, pack } = await getReportingPack(profile, params);
+  const { filters, ownerOptions, savedViews, pack } = await getReportingPack(profile, params);
   const packQuery = buildPackQuery(filters);
 
   return (
@@ -87,7 +143,7 @@ export default async function ReportingPage({
         <div>
           <h2 className="text-lg font-semibold tracking-tight">Report packs</h2>
           <p className="mt-1 text-xs text-muted-foreground">
-            Switch between board-ready presets without rebuilding the underlying model.
+            Switch between board-ready presets and keep filters URL-addressable for print and export.
           </p>
         </div>
 
@@ -97,6 +153,9 @@ export default async function ReportingPage({
               preset: option.id,
               ownerId: filters.ownerId,
               horizonDays: filters.horizonDays,
+              issueType: filters.issueType,
+              severity: filters.severity,
+              statusFocus: filters.statusFocus,
             });
             const active = option.id === filters.preset;
 
@@ -118,7 +177,7 @@ export default async function ReportingPage({
           })}
         </div>
 
-        <form className="grid gap-3 rounded-lg border bg-white p-4 md:grid-cols-4">
+        <form className="grid gap-3 rounded-lg border bg-white p-4 md:grid-cols-2 xl:grid-cols-6">
           <select
             name="preset"
             aria-label="Filter by report preset"
@@ -159,10 +218,115 @@ export default async function ReportingPage({
             ))}
           </select>
 
+          <select
+            name="issueType"
+            aria-label="Filter by issue type"
+            defaultValue={filters.issueType}
+            className="h-10 rounded-md border border-slate-200 bg-white px-3 text-sm"
+          >
+            <option value="">All issue types</option>
+            {issueTypeOptions.map((option) => (
+              <option key={option} value={option}>
+                {option.replaceAll("_", " ")}
+              </option>
+            ))}
+          </select>
+
+          <select
+            name="severity"
+            aria-label="Filter by severity"
+            defaultValue={filters.severity}
+            className="h-10 rounded-md border border-slate-200 bg-white px-3 text-sm"
+          >
+            <option value="">All severities</option>
+            {issueSeverityOptions.map((option) => (
+              <option key={option} value={option}>
+                {option}
+              </option>
+            ))}
+          </select>
+
+          <select
+            name="statusFocus"
+            aria-label="Filter by status focus"
+            defaultValue={filters.statusFocus}
+            className="h-10 rounded-md border border-slate-200 bg-white px-3 text-sm"
+          >
+            {reportingStatusFocusOptions.map((option) => (
+              <option key={option} value={option}>
+                {option.replaceAll("_", " ")}
+              </option>
+            ))}
+          </select>
+
           <button type="submit" className={cn(buttonVariants({ variant: "outline" }), "w-full")}>
             Apply filters
           </button>
         </form>
+
+        <div className="grid gap-4 xl:grid-cols-[1.4fr,0.9fr]">
+          <div className="rounded-lg border bg-white p-4">
+            <h3 className="text-sm font-semibold">Saved views</h3>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Reopen committee-specific filter combinations without rebuilding the pack.
+            </p>
+
+            {savedViews.length === 0 ? (
+              <p className="mt-4 text-sm text-muted-foreground">No saved reporting views yet.</p>
+            ) : (
+              <div className="mt-4 grid gap-3">
+                {savedViews.map((view) => (
+                  <article key={view.id} className="rounded-lg border p-3">
+                    <div className="flex flex-wrap items-start justify-between gap-3">
+                      <div>
+                        <p className="text-sm font-medium">{view.name}</p>
+                        <p className="mt-1 text-xs text-muted-foreground">{view.filterSummary}</p>
+                        <p className="mt-2 text-[11px] text-muted-foreground">
+                          Saved by {view.createdByLabel} on{" "}
+                          {new Date(view.createdAt).toLocaleDateString()}
+                        </p>
+                      </div>
+                      <Link
+                        href={view.href}
+                        className={cn(buttonVariants({ variant: "outline" }), "text-xs")}
+                      >
+                        Open view
+                      </Link>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div className="rounded-lg border bg-white p-4">
+            <h3 className="text-sm font-semibold">Save current view</h3>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Store the active preset and filters as a reusable management or committee view.
+            </p>
+
+            <form action={saveReportingViewAction} className="mt-4 space-y-3">
+              <input
+                type="text"
+                name="name"
+                required
+                minLength={3}
+                maxLength={120}
+                placeholder="Quarterly audit committee"
+                className="h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm"
+              />
+              <input type="hidden" name="preset" value={filters.preset} />
+              <input type="hidden" name="ownerId" value={filters.ownerId} />
+              <input type="hidden" name="horizonDays" value={String(filters.horizonDays)} />
+              <input type="hidden" name="issueType" value={filters.issueType} />
+              <input type="hidden" name="severity" value={filters.severity} />
+              <input type="hidden" name="statusFocus" value={filters.statusFocus} />
+              <button type="submit" className={cn(buttonVariants({ variant: "outline" }), "w-full")}>
+                Save current view
+              </button>
+            </form>
+          </div>
+        </div>
       </section>
 
       <section className="space-y-4 rounded-xl border bg-card p-6">
@@ -173,6 +337,11 @@ export default async function ReportingPage({
             <p className="mt-2 text-xs text-muted-foreground">
               Generated from live data. Horizon: {pack.horizonDays} days
               {pack.ownerLabel ? ` | Owner: ${pack.ownerLabel}` : " | All owners"}.
+            </p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              {pack.issueTypeLabel ? `Issue type: ${pack.issueTypeLabel} | ` : ""}
+              {pack.severityLabel ? `Severity: ${pack.severityLabel} | ` : ""}
+              Status focus: {pack.statusFocusLabel}
             </p>
           </div>
 
@@ -199,20 +368,20 @@ export default async function ReportingPage({
         <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
           Dataset exports
         </h2>
-        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
           {datasetExports.map((item) => (
             <div key={item.id} className="rounded-lg border bg-white p-4">
               <h3 className="text-sm font-semibold">{item.title}</h3>
               <p className="mt-1 text-xs text-muted-foreground">{item.description}</p>
               <div className="mt-3 flex flex-wrap gap-2">
                 <Link
-                  href={`/dashboard/reporting/export?type=${item.id}&format=csv`}
+                  href={`/dashboard/reporting/export?type=${item.id}&format=csv&${packQuery}`}
                   className={cn(buttonVariants({ variant: "outline" }), "text-xs")}
                 >
                   Export CSV
                 </Link>
                 <Link
-                  href={`/dashboard/reporting/export?type=${item.id}&format=json`}
+                  href={`/dashboard/reporting/export?type=${item.id}&format=json&${packQuery}`}
                   className={cn(buttonVariants({ variant: "outline" }), "text-xs")}
                 >
                   Export JSON

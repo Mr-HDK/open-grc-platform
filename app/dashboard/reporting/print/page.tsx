@@ -8,7 +8,15 @@ import { getReportingPack } from "@/lib/reporting/packs";
 export default async function PrintableReportingPage({
   searchParams,
 }: {
-  searchParams: Promise<{ preset?: string; owner?: string; horizon?: string }>;
+  searchParams: Promise<{
+    preset?: string;
+    owner?: string;
+    horizon?: string;
+    issueType?: string;
+    severity?: string;
+    statusFocus?: string;
+    view?: string;
+  }>;
 }) {
   const profile = await requireSessionProfile("manager");
   const params = await searchParams;
@@ -35,6 +43,11 @@ export default async function PrintableReportingPage({
         <p className="mt-2 text-xs text-muted-foreground">
           Generated {new Date(pack.generatedAt).toLocaleString()} | Horizon {pack.horizonDays} days
           {pack.ownerLabel ? ` | Owner ${pack.ownerLabel}` : " | All owners"}
+        </p>
+        <p className="mt-1 text-xs text-muted-foreground">
+          {pack.issueTypeLabel ? `Issue type ${pack.issueTypeLabel} | ` : ""}
+          {pack.severityLabel ? `Severity ${pack.severityLabel} | ` : ""}
+          Status focus {pack.statusFocusLabel}
         </p>
       </section>
 
