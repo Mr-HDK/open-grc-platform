@@ -119,6 +119,13 @@ Phase 1 foundation is implemented. This repository is no longer managed as a gre
   - linked findings and remediation actions reused from existing registers
   - workpapers with reviewer assignment and optional evidence linkage
   - manager-facing list filters by status, owner, and audit period
+- RCSA module:
+  - seed-driven risk control self-assessment questions for design adequacy, operating effectiveness, incidents, evidence, and actions
+  - manager-created campaigns scoped to owner, auditable entity, risk, and/or control
+  - owner/manager response submission with weighted score and result classification
+  - manager review flow with audit history
+  - weak response follow-up generation into linked issues and action plans
+  - campaign list filters by status, owner, period, and score result
 - Control Testing & Findings module:
   - control test campaigns with period, tester, and result
   - automatic finding creation on failed tests
@@ -158,6 +165,7 @@ Phase 1 foundation is implemented. This repository is no longer managed as a gre
 The next development phase focuses on expanding product depth rather than rebuilding the foundation.
 
 Priority areas:
+
 - admin settings and user lifecycle management
 - reusable risk/control starter libraries and bulk import flows
 - exports and reporting for management and audit use
@@ -165,6 +173,7 @@ Priority areas:
 - selective new modules that fit the current architecture, such as incidents or recurring control reviews
 
 Guardrails:
+
 - keep a monolithic Next.js + Supabase architecture
 - avoid complex multi-tenant SaaS concerns unless there is a concrete need
 - prefer incremental vertical slices over large rewrites
@@ -180,6 +189,7 @@ app/
     audits/
     assets/
     control-assurance/
+    rcsa/
     policies/
     third-parties/
     risks/
@@ -358,6 +368,7 @@ The workflow runs:
 - `tests/e2e/risks.create.spec.ts`, `tests/e2e/controls.create.spec.ts`, `tests/e2e/actions.create.spec.ts`, `tests/e2e/evidence.create.spec.ts`, `tests/e2e/frameworks.mapping.spec.ts`, `tests/e2e/libraries.bundles.spec.ts`, and `tests/e2e/settings.roles.spec.ts` skip automatically if required credentials are not set.
 - `tests/e2e/control-tests.findings.spec.ts` validates failed control test -> finding creation -> retest closure.
 - `tests/e2e/audits.lifecycle.spec.ts` validates audit plan -> engagement -> workpaper lifecycle plus list filtering.
+- `tests/e2e/rcsa.lifecycle.spec.ts` validates RCSA campaign creation, response scoring, follow-up issue/action generation, manager review, audit log, and list filtering.
 - `tests/e2e/risk-acceptances.lifecycle.spec.ts` validates manager create + revoke lifecycle.
 - `tests/e2e/issues.lifecycle.spec.ts` validates issue creation from finding context, update lifecycle, and overdue list filters.
 - `tests/e2e/policies.attestation.spec.ts` validates policy review/approval/publish flow plus campaign launch and acknowledgement.

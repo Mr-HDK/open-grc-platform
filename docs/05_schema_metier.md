@@ -7,6 +7,7 @@
 Représente l'espace de travail principal.
 
 Champs:
+
 - id
 - name
 - created_at
@@ -17,6 +18,7 @@ Champs:
 Profil utilisateur lié à l'auth.
 
 Champs:
+
 - id
 - organization_id
 - full_name
@@ -28,6 +30,7 @@ Champs:
 ## risks
 
 Champs:
+
 - id
 - organization_id
 - title
@@ -49,6 +52,7 @@ Champs:
 ## controls
 
 Champs:
+
 - id
 - organization_id
 - code
@@ -69,6 +73,7 @@ Champs:
 Table pivot.
 
 Champs:
+
 - id
 - risk_id
 - control_id
@@ -78,6 +83,7 @@ Champs:
 ## assets
 
 Champs:
+
 - id
 - organization_id
 - name
@@ -95,6 +101,7 @@ Champs:
 ## control_attestations
 
 Champs:
+
 - id
 - organization_id
 - control_id
@@ -117,6 +124,7 @@ Champs:
 ## control_evidence_requests
 
 Champs:
+
 - id
 - organization_id
 - control_id
@@ -141,6 +149,7 @@ Champs:
 Table pivot.
 
 Champs:
+
 - asset_id
 - risk_id
 - created_at
@@ -150,6 +159,7 @@ Champs:
 Table pivot.
 
 Champs:
+
 - asset_id
 - control_id
 - created_at
@@ -157,6 +167,7 @@ Champs:
 ## third_parties
 
 Champs:
+
 - id
 - organization_id
 - name
@@ -185,6 +196,7 @@ Champs:
 Table pivot.
 
 Champs:
+
 - third_party_id
 - risk_id
 - created_at
@@ -194,6 +206,7 @@ Champs:
 Table pivot.
 
 Champs:
+
 - third_party_id
 - control_id
 - created_at
@@ -203,6 +216,7 @@ Champs:
 Table pivot.
 
 Champs:
+
 - third_party_id
 - action_plan_id
 - created_at
@@ -210,6 +224,7 @@ Champs:
 ## third_party_reviews
 
 Champs:
+
 - id
 - organization_id
 - third_party_id
@@ -229,6 +244,7 @@ Champs:
 ## third_party_review_questions
 
 Champs:
+
 - id
 - organization_id
 - question_key
@@ -244,6 +260,7 @@ Champs:
 ## third_party_review_responses
 
 Champs:
+
 - id
 - organization_id
 - third_party_review_id
@@ -259,6 +276,7 @@ Champs:
 ## third_party_document_requests
 
 Champs:
+
 - id
 - organization_id
 - third_party_id
@@ -279,6 +297,7 @@ Champs:
 ## auditable_entities
 
 Champs:
+
 - id
 - organization_id
 - name
@@ -298,6 +317,7 @@ Champs:
 Table pivot.
 
 Champs:
+
 - auditable_entity_id
 - risk_id
 - created_at
@@ -307,6 +327,7 @@ Champs:
 Table pivot.
 
 Champs:
+
 - auditable_entity_id
 - control_id
 - created_at
@@ -316,6 +337,7 @@ Champs:
 Table pivot.
 
 Champs:
+
 - auditable_entity_id
 - asset_id
 - created_at
@@ -325,6 +347,7 @@ Champs:
 Table pivot.
 
 Champs:
+
 - auditable_entity_id
 - third_party_id
 - created_at
@@ -332,6 +355,7 @@ Champs:
 ## audit_plans
 
 Champs:
+
 - id
 - organization_id
 - title
@@ -349,6 +373,7 @@ Champs:
 ## audit_plan_items
 
 Champs:
+
 - id
 - organization_id
 - audit_plan_id
@@ -366,6 +391,7 @@ Champs:
 ## audit_engagements
 
 Champs:
+
 - id
 - organization_id
 - audit_plan_item_id
@@ -388,6 +414,7 @@ Champs:
 ## audit_workpapers
 
 Champs:
+
 - id
 - organization_id
 - audit_engagement_id
@@ -402,11 +429,78 @@ Champs:
 - updated_at
 - deleted_at
 
+## rcsa_questions
+
+Champs:
+
+- id
+- organization_id
+- question_key
+- category (design_adequacy, operating_effectiveness, recent_incidents, evidence_available, actions_needed)
+- prompt
+- weight
+- is_active
+- created_by nullable
+- updated_by nullable
+- created_at
+- updated_at
+- deleted_at
+
+## rcsa_campaigns
+
+Champs:
+
+- id
+- organization_id
+- title
+- description nullable
+- status (draft, in_progress, submitted, reviewed, closed)
+- owner_profile_id nullable
+- auditable_entity_id nullable
+- risk_id nullable
+- control_id nullable
+- period_start_date nullable
+- period_end_date nullable
+- due_date nullable
+- score nullable
+- result nullable (satisfactory, needs_attention, critical)
+- manager_review_notes nullable
+- reviewed_by_profile_id nullable
+- reviewed_at nullable
+- created_by nullable
+- updated_by nullable
+- created_at
+- updated_at
+- deleted_at
+
+## rcsa_responses
+
+Champs:
+
+- id
+- organization_id
+- campaign_id
+- question_id
+- response_value (strong, adequate, weak, critical)
+- response_score
+- notes nullable
+- evidence_available
+- action_required
+- suggested_action nullable
+- issue_id nullable
+- action_plan_id nullable
+- created_by nullable
+- updated_by nullable
+- created_at
+- updated_at
+- deleted_at
+
 ## audit_engagement_findings
 
 Table pivot.
 
 Champs:
+
 - audit_engagement_id
 - finding_id
 - created_at
@@ -416,6 +510,7 @@ Champs:
 Table pivot.
 
 Champs:
+
 - audit_engagement_id
 - action_plan_id
 - created_at
@@ -423,6 +518,7 @@ Champs:
 ## policies
 
 Champs:
+
 - id
 - organization_id
 - title
@@ -442,6 +538,7 @@ Champs:
 ## policy_attestations
 
 Champs:
+
 - id
 - organization_id
 - policy_id
@@ -452,6 +549,7 @@ Champs:
 ## policy_approvals
 
 Champs:
+
 - id
 - organization_id
 - policy_id
@@ -463,6 +561,7 @@ Champs:
 ## policy_audience_groups
 
 Champs:
+
 - id
 - organization_id
 - audience_key
@@ -477,6 +576,7 @@ Champs:
 ## policy_audience_group_members
 
 Champs:
+
 - group_id
 - profile_id
 - created_at
@@ -484,6 +584,7 @@ Champs:
 ## policy_attestation_campaigns
 
 Champs:
+
 - id
 - organization_id
 - policy_id
@@ -501,6 +602,7 @@ Champs:
 ## policy_attestation_targets
 
 Champs:
+
 - id
 - organization_id
 - policy_id
@@ -515,6 +617,7 @@ Champs:
 ## policy_exceptions
 
 Champs:
+
 - id
 - organization_id
 - policy_id
@@ -534,6 +637,7 @@ Champs:
 ## reporting_saved_views
 
 Champs:
+
 - id
 - organization_id
 - name
@@ -552,6 +656,7 @@ Champs:
 ## issues
 
 Champs:
+
 - id
 - organization_id
 - title
@@ -582,6 +687,7 @@ Champs:
 ## action_plans
 
 Champs:
+
 - id
 - organization_id
 - title
@@ -601,6 +707,7 @@ Champs:
 ## evidence
 
 Champs:
+
 - id
 - organization_id
 - file_name
@@ -619,6 +726,7 @@ Champs:
 ## frameworks
 
 Champs:
+
 - id
 - code
 - name
@@ -628,6 +736,7 @@ Champs:
 ## framework_requirements
 
 Champs:
+
 - id
 - framework_id
 - reference_code
@@ -639,6 +748,7 @@ Champs:
 ## control_framework_mappings
 
 Champs:
+
 - id
 - control_id
 - framework_requirement_id
@@ -648,6 +758,7 @@ Champs:
 ## framework_requirement_assessments
 
 Champs:
+
 - id
 - organization_id
 - framework_requirement_id
@@ -663,6 +774,7 @@ Champs:
 ## framework_requirement_assessment_evidence
 
 Champs:
+
 - assessment_id
 - evidence_id
 - created_at
@@ -670,6 +782,7 @@ Champs:
 ## audit_log
 
 Champs:
+
 - id
 - organization_id
 - entity_type
@@ -700,6 +813,16 @@ Champs:
 - audit_engagement n..n findings via audit_engagement_findings
 - audit_engagement n..n action_plans via audit_engagement_action_plans
 - audit_workpaper 0..1 evidence
+- organization 1..n rcsa_questions
+- organization 1..n rcsa_campaigns
+- rcsa_campaign 1..n rcsa_responses
+- rcsa_question 1..n rcsa_responses
+- rcsa_campaign 0..1 auditable_entity
+- rcsa_campaign 0..1 risk
+- rcsa_campaign 0..1 control
+- rcsa_campaign 0..1 owner profile
+- rcsa_response 0..1 issue
+- rcsa_response 0..1 action_plan
 - risk 1..n action_plans
 - control 1..n action_plans
 - risk 1..n evidence
@@ -737,12 +860,14 @@ Champs:
 ## Enums suggérés
 
 ### role
+
 - admin
 - manager
 - contributor
 - viewer
 
 ### risk_status
+
 - draft
 - open
 - mitigated
@@ -750,18 +875,21 @@ Champs:
 - closed
 
 ### risk_level
+
 - low
 - medium
 - high
 - critical
 
 ### control_effectiveness_status
+
 - not_tested
 - effective
 - partially_effective
 - ineffective
 
 ### action_status
+
 - open
 - in_progress
 - blocked
@@ -769,47 +897,55 @@ Champs:
 - cancelled
 
 ### priority
+
 - low
 - medium
 - high
 - critical
 
 ### third_party_assessment_status
+
 - acceptable
 - monitoring
 - elevated
 - critical
 
 ### third_party_tier
+
 - tier_1
 - tier_2
 - tier_3
 
 ### third_party_inherent_risk
+
 - low
 - medium
 - high
 - critical
 
 ### third_party_onboarding_status
+
 - planned
 - in_progress
 - completed
 - blocked
 
 ### third_party_review_response_value
+
 - yes
 - partial
 - no
 - not_applicable
 
 ### third_party_review_conclusion
+
 - low_risk
 - moderate_risk
 - high_risk
 - critical_risk
 
 ### third_party_document_request_status
+
 - requested
 - submitted
 - accepted
@@ -817,31 +953,37 @@ Champs:
 - waived
 
 ### policy_status
+
 - draft
 - in_review
 - active
 - archived
 
 ### policy_approval_decision
+
 - approved
 - rejected
 
 ### policy_campaign_audience_type
+
 - role
 - profiles
 - group
 
 ### policy_attestation_status
+
 - pending
 - acknowledged
 - overdue
 
 ### policy_exception_status
+
 - active
 - expired
 - revoked
 
 ### issue_type
+
 - audit_finding
 - control_failure
 - policy_exception
@@ -850,17 +992,48 @@ Champs:
 - incident_follow_up
 
 ### issue_severity
+
 - low
 - medium
 - high
 - critical
 
 ### issue_status
+
 - open
 - in_progress
 - blocked
 - resolved
 - closed
+
+### rcsa_campaign_status
+
+- draft
+- in_progress
+- submitted
+- reviewed
+- closed
+
+### rcsa_result
+
+- satisfactory
+- needs_attention
+- critical
+
+### rcsa_question_category
+
+- design_adequacy
+- operating_effectiveness
+- recent_incidents
+- evidence_available
+- actions_needed
+
+### rcsa_response_value
+
+- strong
+- adequate
+- weak
+- critical
 
 ## Règles importantes
 
@@ -868,6 +1041,9 @@ Champs:
 - `impact` et `likelihood` bornés entre 1 et 5
 - une preuve doit cibler au moins une entité
 - un action plan doit être lié à un risque, un contrôle ou les deux
+- une campagne RCSA doit cibler au moins un owner, une entité auditable, un risque ou un contrôle
+- le score RCSA est calculé comme moyenne pondérée des questions seed-driven
+- une réponse RCSA faible peut générer une issue ou un action plan lié
 - les suppressions utilisateur sont idéalement des soft deletes sur entités critiques
 
 ## Vue SQL utile plus tard

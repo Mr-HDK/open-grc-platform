@@ -16,6 +16,7 @@ const baseNavLinks = [
   { href: "/dashboard/assets", label: "Assets" },
   { href: "/dashboard/auditable-entities", label: "Auditable entities" },
   { href: "/dashboard/audits", label: "Audits" },
+  { href: "/dashboard/rcsa", label: "RCSA" },
   { href: "/dashboard/control-reviews", label: "Control reviews" },
   { href: "/dashboard/control-tests", label: "Control tests" },
   { href: "/dashboard/findings", label: "Findings" },
@@ -44,7 +45,10 @@ export function AppShell({ userEmail, userRole, children }: AppShellProps) {
   }
 
   if (userRole === "admin" || userRole === "manager") {
-    navLinks.push({ href: "/dashboard/control-assurance", label: "Control assurance" });
+    navLinks.push({
+      href: "/dashboard/control-assurance",
+      label: "Control assurance",
+    });
     navLinks.push({ href: "/dashboard/reporting", label: "Reporting" });
     navLinks.push({ href: "/dashboard/notifications", label: "Notifications" });
   }
@@ -56,7 +60,9 @@ export function AppShell({ userEmail, userRole, children }: AppShellProps) {
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
             Open GRC
           </p>
-          <p className="mt-2 truncate text-sm text-muted-foreground">{userEmail}</p>
+          <p className="mt-2 truncate text-sm text-muted-foreground">
+            {userEmail}
+          </p>
           <p
             className={`mt-3 inline-flex rounded-full px-2 py-1 text-xs font-semibold uppercase tracking-wide ${roleBadgeClass[userRole]}`}
           >

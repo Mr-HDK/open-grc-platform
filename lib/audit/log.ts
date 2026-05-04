@@ -27,7 +27,9 @@ export type AuditEntityType =
   | "third_party_review_response"
   | "third_party_document_request"
   | "control_attestation"
-  | "control_evidence_request";
+  | "control_evidence_request"
+  | "rcsa_campaign"
+  | "rcsa_response";
 export type AuditAction = "create" | "update" | "soft_delete";
 
 export type AuditEntry = {
