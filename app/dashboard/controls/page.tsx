@@ -5,6 +5,7 @@ import { FeedbackAlert } from "@/components/ui/feedback-alert";
 import { Input } from "@/components/ui/input";
 import { requireSessionProfile } from "@/lib/auth/profile";
 import { hasRole } from "@/lib/permissions/roles";
+import { buildIlikeOrFilter } from "@/lib/supabase/filters";
 import { cn } from "@/lib/utils/cn";
 import {
   controlEffectivenessOptions,
@@ -43,7 +44,9 @@ export default async function ControlsPage({
   const effectiveness = isControlEffectivenessStatus(params.effectiveness)
     ? params.effectiveness
     : "";
-  const frequency = isControlReviewFrequency(params.frequency) ? params.frequency : "";
+  const frequency = isControlReviewFrequency(params.frequency)
+    ? params.frequency
+    : "";
 
   const supabase = await createSupabaseServerClient();
   let query = supabase
@@ -54,8 +57,9 @@ export default async function ControlsPage({
     .is("deleted_at", null)
     .order("updated_at", { ascending: false });
 
-  if (q) {
-    query = query.or(`title.ilike.%${q}%,code.ilike.%${q}%`);
+  const searchFilter = buildIlikeOrFilter(["title", "code"], q);
+  if (searchFilter) {
+    query = query.or(searchFilter);
   }
 
   if (effectiveness) {
@@ -72,7 +76,9 @@ export default async function ControlsPage({
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Controls catalog</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">
+            Controls catalog
+          </h1>
           <p className="text-sm text-muted-foreground">
             Maintain control effectiveness and map controls to risks.
           </p>
@@ -84,10 +90,16 @@ export default async function ControlsPage({
         ) : null}
       </div>
 
-      {params.error ? <FeedbackAlert message={decodeURIComponent(params.error)} /> : null}
+      {params.error ? (
+        <FeedbackAlert message={decodeURIComponent(params.error)} />
+      ) : null}
 
       <form className="grid gap-3 rounded-lg border bg-card p-4 md:grid-cols-4">
-        <Input name="q" placeholder="Search by title or code" defaultValue={q} />
+        <Input
+          name="q"
+          placeholder="Search by title or code"
+          defaultValue={q}
+        />
 
         <select
           name="effectiveness"
@@ -117,7 +129,10 @@ export default async function ControlsPage({
           ))}
         </select>
 
-        <button type="submit" className={cn(buttonVariants({ variant: "outline" }), "w-full")}>
+        <button
+          type="submit"
+          className={cn(buttonVariants({ variant: "outline" }), "w-full")}
+        >
           Apply filters
         </button>
       </form>
@@ -161,7 +176,9 @@ export default async function ControlsPage({
                     {control.title}
                   </Link>
                 </td>
-                <td className="px-4 py-3 text-muted-foreground">{control.control_type}</td>
+                <td className="px-4 py-3 text-muted-foreground">
+                  {control.control_type}
+                </td>
                 <td className="px-4 py-3">{control.effectiveness_status}</td>
                 <td className="px-4 py-3">{control.review_frequency}</td>
                 <td className="px-4 py-3 text-muted-foreground">
@@ -172,7 +189,10 @@ export default async function ControlsPage({
 
             {!error && (data?.length ?? 0) === 0 ? (
               <tr>
-                <td className="px-4 py-8 text-center text-muted-foreground" colSpan={6}>
+                <td
+                  className="px-4 py-8 text-center text-muted-foreground"
+                  colSpan={6}
+                >
                   No controls found for the current filters.
                 </td>
               </tr>

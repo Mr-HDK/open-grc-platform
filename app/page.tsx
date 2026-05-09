@@ -10,17 +10,20 @@ export default function HomePage() {
           Open GRC Platform
         </p>
         <h1 className="text-4xl font-semibold tracking-tight">
-          Risk and controls MVP bootstrap
+          Risk and controls operations workspace
         </h1>
         <p className="mt-4 max-w-2xl text-base text-muted-foreground">
-          Initial project scaffold with Next.js, Tailwind, Supabase setup, and
-          protected dashboard routes.
+          Centralize risks, controls, evidence, third parties, policies, audits,
+          issues, and assurance workflows in one internal GRC platform.
         </p>
         <div className="mt-8 flex flex-wrap gap-3">
           <Link href="/dashboard" className={buttonVariants()}>
             Go to dashboard
           </Link>
-          <Link href="/login" className={buttonVariants({ variant: "outline" })}>
+          <Link
+            href="/login"
+            className={buttonVariants({ variant: "outline" })}
+          >
             Go to login
           </Link>
         </div>

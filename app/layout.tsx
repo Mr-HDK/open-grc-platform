@@ -9,7 +9,8 @@ const sourceSans = Source_Sans_3({
 
 export const metadata: Metadata = {
   title: "Open GRC Platform",
-  description: "Internal MVP for risk and controls management.",
+  description:
+    "Internal governance, risk, compliance, audit, and assurance platform.",
 };
 
 export default function RootLayout({

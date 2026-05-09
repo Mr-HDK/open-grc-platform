@@ -6,6 +6,7 @@ import { FeedbackAlert } from "@/components/ui/feedback-alert";
 import { Input } from "@/components/ui/input";
 import { requireSessionProfile } from "@/lib/auth/profile";
 import { hasRole } from "@/lib/permissions/roles";
+import { buildIlikeOrFilter } from "@/lib/supabase/filters";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import {
   assetCriticalityOptions,
@@ -53,19 +54,26 @@ export default async function AssetsPage({
 
   const q = params.q?.trim() ?? "";
   const type = params.type?.trim() ?? "";
-  const criticality = isAssetCriticality(params.criticality) ? params.criticality : "";
+  const criticality = isAssetCriticality(params.criticality)
+    ? params.criticality
+    : "";
   const status = isAssetStatus(params.status) ? params.status : "";
-  const owner = z.string().uuid().safeParse(params.owner).success ? (params.owner ?? "") : "";
+  const owner = z.string().uuid().safeParse(params.owner).success
+    ? (params.owner ?? "")
+    : "";
 
   const supabase = await createSupabaseServerClient();
   let query = supabase
     .from("assets")
-    .select("id, name, asset_type, criticality, status, owner_profile_id, updated_at")
+    .select(
+      "id, name, asset_type, criticality, status, owner_profile_id, updated_at",
+    )
     .is("deleted_at", null)
     .order("updated_at", { ascending: false });
 
-  if (q) {
-    query = query.or(`name.ilike.%${q}%,asset_type.ilike.%${q}%`);
+  const searchFilter = buildIlikeOrFilter(["name", "asset_type"], q);
+  if (searchFilter) {
+    query = query.or(searchFilter);
   }
 
   if (type) {
@@ -84,21 +92,22 @@ export default async function AssetsPage({
     query = query.eq("status", status);
   }
 
-  const [{ data: assets, error }, { data: owners }, { data: assetTypes }] = await Promise.all([
-    query.returns<AssetRow[]>(),
-    supabase
-      .from("profiles")
-      .select("id, email, full_name")
-      .eq("organization_id", profile.organizationId)
-      .order("email")
-      .returns<OwnerRow[]>(),
-    supabase
-      .from("assets")
-      .select("asset_type")
-      .eq("organization_id", profile.organizationId)
-      .is("deleted_at", null)
-      .returns<AssetTypeRow[]>(),
-  ]);
+  const [{ data: assets, error }, { data: owners }, { data: assetTypes }] =
+    await Promise.all([
+      query.returns<AssetRow[]>(),
+      supabase
+        .from("profiles")
+        .select("id, email, full_name")
+        .eq("organization_id", profile.organizationId)
+        .order("email")
+        .returns<OwnerRow[]>(),
+      supabase
+        .from("assets")
+        .select("asset_type")
+        .eq("organization_id", profile.organizationId)
+        .is("deleted_at", null)
+        .returns<AssetTypeRow[]>(),
+    ]);
 
   const ownerById = new Map(
     (owners ?? []).map((item) => [
@@ -107,13 +116,17 @@ export default async function AssetsPage({
     ]),
   );
 
-  const uniqueTypes = Array.from(new Set((assetTypes ?? []).map((item) => item.asset_type))).sort();
+  const uniqueTypes = Array.from(
+    new Set((assetTypes ?? []).map((item) => item.asset_type)),
+  ).sort();
 
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Asset register</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">
+            Asset register
+          </h1>
           <p className="text-sm text-muted-foreground">
             Track critical assets and link them to risks and controls.
           </p>
@@ -125,7 +138,9 @@ export default async function AssetsPage({
         ) : null}
       </div>
 
-      {params.error ? <FeedbackAlert message={decodeURIComponent(params.error)} /> : null}
+      {params.error ? (
+        <FeedbackAlert message={decodeURIComponent(params.error)} />
+      ) : null}
 
       <form className="grid gap-3 rounded-lg border bg-card p-4 md:grid-cols-6">
         <Input name="q" placeholder="Search by name or type" defaultValue={q} />
@@ -167,7 +182,9 @@ export default async function AssetsPage({
           <option value="">All owners</option>
           {(owners ?? []).map((item) => (
             <option key={item.id} value={item.id}>
-              {item.full_name ? `${item.full_name} (${item.email})` : item.email}
+              {item.full_name
+                ? `${item.full_name} (${item.email})`
+                : item.email}
             </option>
           ))}
         </select>
@@ -186,7 +203,10 @@ export default async function AssetsPage({
           ))}
         </select>
 
-        <button type="submit" className={cn(buttonVariants({ variant: "outline" }), "w-full")}>
+        <button
+          type="submit"
+          className={cn(buttonVariants({ variant: "outline" }), "w-full")}
+        >
           Apply filters
         </button>
       </form>
@@ -222,15 +242,22 @@ export default async function AssetsPage({
             {(assets ?? []).map((asset) => (
               <tr key={asset.id} className="border-b last:border-b-0">
                 <td className="px-4 py-3">
-                  <Link href={`/dashboard/assets/${asset.id}`} className="font-medium hover:underline">
+                  <Link
+                    href={`/dashboard/assets/${asset.id}`}
+                    className="font-medium hover:underline"
+                  >
                     {asset.name}
                   </Link>
                 </td>
-                <td className="px-4 py-3 text-muted-foreground">{asset.asset_type}</td>
+                <td className="px-4 py-3 text-muted-foreground">
+                  {asset.asset_type}
+                </td>
                 <td className="px-4 py-3">{asset.criticality}</td>
                 <td className="px-4 py-3">{asset.status}</td>
                 <td className="px-4 py-3 text-muted-foreground">
-                  {asset.owner_profile_id ? ownerById.get(asset.owner_profile_id) ?? "Unknown" : "-"}
+                  {asset.owner_profile_id
+                    ? (ownerById.get(asset.owner_profile_id) ?? "Unknown")
+                    : "-"}
                 </td>
                 <td className="px-4 py-3 text-muted-foreground">
                   {new Date(asset.updated_at).toLocaleDateString()}
@@ -240,7 +267,10 @@ export default async function AssetsPage({
 
             {!error && (assets?.length ?? 0) === 0 ? (
               <tr>
-                <td className="px-4 py-8 text-center text-muted-foreground" colSpan={6}>
+                <td
+                  className="px-4 py-8 text-center text-muted-foreground"
+                  colSpan={6}
+                >
                   No assets found for the current filters.
                 </td>
               </tr>

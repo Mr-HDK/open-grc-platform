@@ -12,6 +12,7 @@ export type SessionProfile = {
   fullName: string | null;
   organizationId: string;
   role: Role;
+  status: ProfileStatus;
 };
 
 type ProfileRow = {
@@ -23,6 +24,18 @@ type ProfileRow = {
   status?: string | null;
 };
 
+type ProfileStatus = "active" | "invited" | "deactivated";
+
+function normalizeProfileStatus(
+  status: string | null | undefined,
+): ProfileStatus {
+  if (status === "invited" || status === "deactivated") {
+    return status;
+  }
+
+  return "active";
+}
+
 function normalizeProfile(row: ProfileRow): SessionProfile {
   return {
     id: row.id,
@@ -30,6 +43,7 @@ function normalizeProfile(row: ProfileRow): SessionProfile {
     fullName: row.full_name,
     organizationId: row.organization_id ?? row.id,
     role: isRole(row.role) ? row.role : "viewer",
+    status: normalizeProfileStatus(row.status),
   };
 }
 
@@ -66,12 +80,18 @@ async function ensureProfileFromUser() {
     return null;
   }
 
+  let profileRow = data;
+
   if (data.status === "invited") {
-    await supabase.from("profiles").update({ status: "active" }).eq("id", user.id);
+    await supabase
+      .from("profiles")
+      .update({ status: "active" })
+      .eq("id", user.id);
+    profileRow = { ...data, status: "active" };
   }
 
-  if (data.organization_id) {
-    return normalizeProfile(data);
+  if (profileRow.organization_id) {
+    return normalizeProfile(profileRow);
   }
 
   // Self-heal legacy rows with null organization_id when organizations table exists.
@@ -83,7 +103,7 @@ async function ensureProfileFromUser() {
     .maybeSingle<{ id: string }>();
 
   if (!org?.id) {
-    return normalizeProfile(data);
+    return normalizeProfile(profileRow);
   }
 
   await supabase
@@ -97,7 +117,7 @@ async function ensureProfileFromUser() {
     .eq("id", user.id)
     .maybeSingle<ProfileRow>();
 
-  return refreshed ? normalizeProfile(refreshed) : normalizeProfile(data);
+  return refreshed ? normalizeProfile(refreshed) : normalizeProfile(profileRow);
 }
 
 export async function getSessionProfile() {
@@ -109,6 +129,16 @@ export async function requireSessionProfile(requiredRole: Role = "viewer") {
 
   if (!profile) {
     redirect("/login?error=profile_missing");
+  }
+
+  if (profile.status !== "active") {
+    const supabase = await createSupabaseServerClient();
+    await supabase.auth.signOut();
+    redirect(
+      profile.status === "deactivated"
+        ? "/login?error=account_deactivated"
+        : "/login?error=account_inactive",
+    );
   }
 
   if (!hasRole(requiredRole, profile.role)) {

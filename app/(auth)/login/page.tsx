@@ -29,6 +29,10 @@ async function signIn(formData: FormData) {
 const errorMessageByCode: Record<string, string> = {
   invalid_credentials: "Invalid credentials. Please try again.",
   missing_credentials: "Email and password are required.",
+  account_deactivated:
+    "Your account is deactivated. Ask an administrator to reactivate access.",
+  account_inactive:
+    "Your profile is not active yet. Ask an administrator to confirm your access.",
   profile_missing:
     "Your profile could not be loaded. Run `npm run db:setup` or ask an admin to confirm profiles are seeded.",
   organization_missing:
@@ -46,7 +50,10 @@ export default async function LoginPage({
   const user = await getSessionUser();
 
   const shouldHoldOnError =
-    errorCode === "profile_missing" || errorCode === "organization_missing";
+    errorCode === "profile_missing" ||
+    errorCode === "organization_missing" ||
+    errorCode === "account_deactivated" ||
+    errorCode === "account_inactive";
 
   if (user && shouldHoldOnError) {
     const supabase = await createSupabaseServerClient();

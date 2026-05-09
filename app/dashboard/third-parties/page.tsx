@@ -6,6 +6,7 @@ import { FeedbackAlert } from "@/components/ui/feedback-alert";
 import { Input } from "@/components/ui/input";
 import { requireSessionProfile } from "@/lib/auth/profile";
 import { hasRole } from "@/lib/permissions/roles";
+import { buildIlikeOrFilter } from "@/lib/supabase/filters";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import {
   isThirdPartyAssessmentStatus,
@@ -37,11 +38,18 @@ type OwnerRow = {
   full_name: string | null;
 };
 
-const renewalHorizonOptions = ["overdue", "next_30_days", "next_90_days", "missing"] as const;
+const renewalHorizonOptions = [
+  "overdue",
+  "next_30_days",
+  "next_90_days",
+  "missing",
+] as const;
 type RenewalHorizon = (typeof renewalHorizonOptions)[number];
 
 function isRenewalHorizon(value: string | undefined): value is RenewalHorizon {
-  return Boolean(value && renewalHorizonOptions.includes(value as RenewalHorizon));
+  return Boolean(
+    value && renewalHorizonOptions.includes(value as RenewalHorizon),
+  );
 }
 
 export default async function ThirdPartiesPage({
@@ -62,10 +70,16 @@ export default async function ThirdPartiesPage({
   const params = await searchParams;
 
   const q = params.q?.trim() ?? "";
-  const status = isThirdPartyAssessmentStatus(params.status) ? params.status : "";
-  const criticality = isThirdPartyCriticality(params.criticality) ? params.criticality : "";
+  const status = isThirdPartyAssessmentStatus(params.status)
+    ? params.status
+    : "";
+  const criticality = isThirdPartyCriticality(params.criticality)
+    ? params.criticality
+    : "";
   const tier = isThirdPartyTier(params.tier) ? params.tier : "";
-  const owner = z.string().uuid().safeParse(params.owner).success ? (params.owner ?? "") : "";
+  const owner = z.string().uuid().safeParse(params.owner).success
+    ? (params.owner ?? "")
+    : "";
   const renewal = isRenewalHorizon(params.renewal) ? params.renewal : "";
 
   const supabase = await createSupabaseServerClient();
@@ -77,8 +91,9 @@ export default async function ThirdPartiesPage({
     .is("deleted_at", null)
     .order("updated_at", { ascending: false });
 
-  if (q) {
-    query = query.or(`name.ilike.%${q}%,service.ilike.%${q}%`);
+  const searchFilter = buildIlikeOrFilter(["name", "service"], q);
+  if (searchFilter) {
+    query = query.or(searchFilter);
   }
 
   if (status) {
@@ -98,8 +113,12 @@ export default async function ThirdPartiesPage({
   }
 
   const todayIso = new Date().toISOString().slice(0, 10);
-  const next30Iso = new Date(Date.now() + 30 * 24 * 3600 * 1000).toISOString().slice(0, 10);
-  const next90Iso = new Date(Date.now() + 90 * 24 * 3600 * 1000).toISOString().slice(0, 10);
+  const next30Iso = new Date(Date.now() + 30 * 24 * 3600 * 1000)
+    .toISOString()
+    .slice(0, 10);
+  const next90Iso = new Date(Date.now() + 90 * 24 * 3600 * 1000)
+    .toISOString()
+    .slice(0, 10);
 
   if (renewal === "overdue") {
     query = query.not("renewal_date", "is", null).lt("renewal_date", todayIso);
@@ -134,29 +153,44 @@ export default async function ThirdPartiesPage({
   ]);
 
   const ownerById = new Map(
-    (owners ?? []).map((item) => [item.id, item.full_name ? `${item.full_name} (${item.email})` : item.email]),
+    (owners ?? []).map((item) => [
+      item.id,
+      item.full_name ? `${item.full_name} (${item.email})` : item.email,
+    ]),
   );
 
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Third-party risk</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">
+            Third-party risk
+          </h1>
           <p className="text-sm text-muted-foreground">
-            Track vendor posture, review status, renewal horizon, and linked entities.
+            Track vendor posture, review status, renewal horizon, and linked
+            entities.
           </p>
         </div>
         {canEdit ? (
-          <Link href="/dashboard/third-parties/new" className={buttonVariants()}>
+          <Link
+            href="/dashboard/third-parties/new"
+            className={buttonVariants()}
+          >
             New vendor
           </Link>
         ) : null}
       </div>
 
-      {params.error ? <FeedbackAlert message={decodeURIComponent(params.error)} /> : null}
+      {params.error ? (
+        <FeedbackAlert message={decodeURIComponent(params.error)} />
+      ) : null}
 
       <form className="grid gap-3 rounded-lg border bg-card p-4 md:grid-cols-7">
-        <Input name="q" placeholder="Search by vendor or service" defaultValue={q} />
+        <Input
+          name="q"
+          placeholder="Search by vendor or service"
+          defaultValue={q}
+        />
 
         <select
           name="tier"
@@ -209,7 +243,9 @@ export default async function ThirdPartiesPage({
           <option value="">All owners</option>
           {(owners ?? []).map((item) => (
             <option key={item.id} value={item.id}>
-              {item.full_name ? `${item.full_name} (${item.email})` : item.email}
+              {item.full_name
+                ? `${item.full_name} (${item.email})`
+                : item.email}
             </option>
           ))}
         </select>
@@ -227,7 +263,10 @@ export default async function ThirdPartiesPage({
           <option value="missing">Missing renewal date</option>
         </select>
 
-        <button type="submit" className={cn(buttonVariants({ variant: "outline" }), "w-full")}>
+        <button
+          type="submit"
+          className={cn(buttonVariants({ variant: "outline" }), "w-full")}
+        >
           Apply filters
         </button>
       </form>
@@ -269,11 +308,16 @@ export default async function ThirdPartiesPage({
             {(thirdParties ?? []).map((thirdParty) => (
               <tr key={thirdParty.id} className="border-b last:border-b-0">
                 <td className="px-4 py-3">
-                  <Link href={`/dashboard/third-parties/${thirdParty.id}`} className="font-medium hover:underline">
+                  <Link
+                    href={`/dashboard/third-parties/${thirdParty.id}`}
+                    className="font-medium hover:underline"
+                  >
                     {thirdParty.name}
                   </Link>
                 </td>
-                <td className="px-4 py-3 text-muted-foreground">{thirdParty.service}</td>
+                <td className="px-4 py-3 text-muted-foreground">
+                  {thirdParty.service}
+                </td>
                 <td className="px-4 py-3">
                   {thirdParty.tier} / {thirdParty.criticality}
                 </td>
@@ -281,12 +325,18 @@ export default async function ThirdPartiesPage({
                   {thirdParty.assessment_status} / {thirdParty.assessment_score}
                 </td>
                 <td className="px-4 py-3 text-muted-foreground">
-                  {thirdParty.owner_profile_id ? ownerById.get(thirdParty.owner_profile_id) ?? "Unknown" : "-"}
+                  {thirdParty.owner_profile_id
+                    ? (ownerById.get(thirdParty.owner_profile_id) ?? "Unknown")
+                    : "-"}
                 </td>
-                <td className={`px-4 py-3 ${thirdParty.renewal_date && thirdParty.renewal_date < todayIso ? "text-rose-600" : "text-muted-foreground"}`}>
+                <td
+                  className={`px-4 py-3 ${thirdParty.renewal_date && thirdParty.renewal_date < todayIso ? "text-rose-600" : "text-muted-foreground"}`}
+                >
                   {thirdParty.renewal_date ?? "-"}
                 </td>
-                <td className={`px-4 py-3 ${thirdParty.next_review_date && thirdParty.next_review_date < todayIso ? "text-rose-600" : "text-muted-foreground"}`}>
+                <td
+                  className={`px-4 py-3 ${thirdParty.next_review_date && thirdParty.next_review_date < todayIso ? "text-rose-600" : "text-muted-foreground"}`}
+                >
                   {thirdParty.next_review_date ?? "-"}
                 </td>
                 <td className="px-4 py-3 text-muted-foreground">
@@ -297,7 +347,10 @@ export default async function ThirdPartiesPage({
 
             {!error && (thirdParties?.length ?? 0) === 0 ? (
               <tr>
-                <td className="px-4 py-8 text-center text-muted-foreground" colSpan={8}>
+                <td
+                  className="px-4 py-8 text-center text-muted-foreground"
+                  colSpan={8}
+                >
                   No vendors found for the current filters.
                 </td>
               </tr>
