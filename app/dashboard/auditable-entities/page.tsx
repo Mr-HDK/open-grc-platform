@@ -6,6 +6,7 @@ import { FeedbackAlert } from "@/components/ui/feedback-alert";
 import { Input } from "@/components/ui/input";
 import { requireSessionProfile } from "@/lib/auth/profile";
 import { hasRole } from "@/lib/permissions/roles";
+import { buildIlikeOrFilter } from "@/lib/supabase/filters";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import {
   auditableEntityStatusOptions,
@@ -54,18 +55,25 @@ export default async function AuditableEntitiesPage({
   const q = params.q?.trim() ?? "";
   const type = isAuditableEntityType(params.type) ? params.type : "";
   const status = isAuditableEntityStatus(params.status) ? params.status : "";
-  const owner = z.string().uuid().safeParse(params.owner).success ? (params.owner ?? "") : "";
-  const parent = z.string().uuid().safeParse(params.parent).success ? (params.parent ?? "") : "";
+  const owner = z.string().uuid().safeParse(params.owner).success
+    ? (params.owner ?? "")
+    : "";
+  const parent = z.string().uuid().safeParse(params.parent).success
+    ? (params.parent ?? "")
+    : "";
 
   const supabase = await createSupabaseServerClient();
   let query = supabase
     .from("auditable_entities")
-    .select("id, name, entity_type, status, owner_profile_id, parent_entity_id, updated_at")
+    .select(
+      "id, name, entity_type, status, owner_profile_id, parent_entity_id, updated_at",
+    )
     .is("deleted_at", null)
     .order("updated_at", { ascending: false });
 
-  if (q) {
-    query = query.or(`name.ilike.%${q}%,description.ilike.%${q}%`);
+  const searchFilter = buildIlikeOrFilter(["name", "description"], q);
+  if (searchFilter) {
+    query = query.or(searchFilter);
   }
 
   if (type) {
@@ -84,22 +92,23 @@ export default async function AuditableEntitiesPage({
     query = query.eq("parent_entity_id", parent);
   }
 
-  const [{ data: entities, error }, { data: owners }, { data: parentOptions }] = await Promise.all([
-    query.returns<AuditableEntityRow[]>(),
-    supabase
-      .from("profiles")
-      .select("id, email, full_name")
-      .eq("organization_id", profile.organizationId)
-      .order("email")
-      .returns<ProfileRow[]>(),
-    supabase
-      .from("auditable_entities")
-      .select("id, name")
-      .eq("organization_id", profile.organizationId)
-      .is("deleted_at", null)
-      .order("name")
-      .returns<Array<{ id: string; name: string }>>(),
-  ]);
+  const [{ data: entities, error }, { data: owners }, { data: parentOptions }] =
+    await Promise.all([
+      query.returns<AuditableEntityRow[]>(),
+      supabase
+        .from("profiles")
+        .select("id, email, full_name")
+        .eq("organization_id", profile.organizationId)
+        .order("email")
+        .returns<ProfileRow[]>(),
+      supabase
+        .from("auditable_entities")
+        .select("id, name")
+        .eq("organization_id", profile.organizationId)
+        .is("deleted_at", null)
+        .order("name")
+        .returns<Array<{ id: string; name: string }>>(),
+    ]);
 
   const ownerById = new Map(
     (owners ?? []).map((item) => [
@@ -107,28 +116,42 @@ export default async function AuditableEntitiesPage({
       item.full_name ? `${item.full_name} (${item.email})` : item.email,
     ]),
   );
-  const parentNameById = new Map((parentOptions ?? []).map((item) => [item.id, item.name]));
+  const parentNameById = new Map(
+    (parentOptions ?? []).map((item) => [item.id, item.name]),
+  );
 
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Auditable entities</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">
+            Auditable entities
+          </h1>
           <p className="text-sm text-muted-foreground">
-            Organize auditable scope across business units, processes, applications, and vendors.
+            Organize auditable scope across business units, processes,
+            applications, and vendors.
           </p>
         </div>
         {canEdit ? (
-          <Link href="/dashboard/auditable-entities/new" className={buttonVariants()}>
+          <Link
+            href="/dashboard/auditable-entities/new"
+            className={buttonVariants()}
+          >
             New entity
           </Link>
         ) : null}
       </div>
 
-      {params.error ? <FeedbackAlert message={decodeURIComponent(params.error)} /> : null}
+      {params.error ? (
+        <FeedbackAlert message={decodeURIComponent(params.error)} />
+      ) : null}
 
       <form className="grid gap-3 rounded-lg border bg-card p-4 md:grid-cols-6">
-        <Input name="q" placeholder="Search by name or description" defaultValue={q} />
+        <Input
+          name="q"
+          placeholder="Search by name or description"
+          defaultValue={q}
+        />
 
         <select
           name="type"
@@ -167,7 +190,9 @@ export default async function AuditableEntitiesPage({
           <option value="">All owners</option>
           {(owners ?? []).map((item) => (
             <option key={item.id} value={item.id}>
-              {item.full_name ? `${item.full_name} (${item.email})` : item.email}
+              {item.full_name
+                ? `${item.full_name} (${item.email})`
+                : item.email}
             </option>
           ))}
         </select>
@@ -186,7 +211,10 @@ export default async function AuditableEntitiesPage({
           ))}
         </select>
 
-        <button type="submit" className={cn(buttonVariants({ variant: "outline" }), "w-full")}>
+        <button
+          type="submit"
+          className={cn(buttonVariants({ variant: "outline" }), "w-full")}
+        >
           Apply filters
         </button>
       </form>
@@ -229,13 +257,19 @@ export default async function AuditableEntitiesPage({
                     {entity.name}
                   </Link>
                 </td>
-                <td className="px-4 py-3 text-muted-foreground">{formatLabel(entity.entity_type)}</td>
+                <td className="px-4 py-3 text-muted-foreground">
+                  {formatLabel(entity.entity_type)}
+                </td>
                 <td className="px-4 py-3">{entity.status}</td>
                 <td className="px-4 py-3 text-muted-foreground">
-                  {entity.parent_entity_id ? parentNameById.get(entity.parent_entity_id) ?? "Unknown" : "-"}
+                  {entity.parent_entity_id
+                    ? (parentNameById.get(entity.parent_entity_id) ?? "Unknown")
+                    : "-"}
                 </td>
                 <td className="px-4 py-3 text-muted-foreground">
-                  {entity.owner_profile_id ? ownerById.get(entity.owner_profile_id) ?? "Unknown" : "-"}
+                  {entity.owner_profile_id
+                    ? (ownerById.get(entity.owner_profile_id) ?? "Unknown")
+                    : "-"}
                 </td>
                 <td className="px-4 py-3 text-muted-foreground">
                   {new Date(entity.updated_at).toLocaleDateString()}
@@ -245,7 +279,10 @@ export default async function AuditableEntitiesPage({
 
             {!error && (entities?.length ?? 0) === 0 ? (
               <tr>
-                <td className="px-4 py-8 text-center text-muted-foreground" colSpan={6}>
+                <td
+                  className="px-4 py-8 text-center text-muted-foreground"
+                  colSpan={6}
+                >
                   No auditable entities found for the current filters.
                 </td>
               </tr>

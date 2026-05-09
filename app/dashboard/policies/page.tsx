@@ -6,6 +6,7 @@ import { FeedbackAlert } from "@/components/ui/feedback-alert";
 import { Input } from "@/components/ui/input";
 import { requireSessionProfile } from "@/lib/auth/profile";
 import { hasRole } from "@/lib/permissions/roles";
+import { buildIlikeOrFilter } from "@/lib/supabase/filters";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { isPolicyStatus, policyStatusOptions } from "@/lib/validators/policy";
 import { cn } from "@/lib/utils/cn";
@@ -37,15 +38,24 @@ type AttestationTargetRow = {
 
 function dayDifferenceFromToday(dateValue: string) {
   const today = new Date();
-  const todayUtc = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate()));
+  const todayUtc = new Date(
+    Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate()),
+  );
   const target = new Date(`${dateValue}T00:00:00.000Z`);
-  return Math.floor((target.getTime() - todayUtc.getTime()) / (24 * 60 * 60 * 1000));
+  return Math.floor(
+    (target.getTime() - todayUtc.getTime()) / (24 * 60 * 60 * 1000),
+  );
 }
 
 export default async function PoliciesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; status?: string; owner?: string; error?: string }>;
+  searchParams: Promise<{
+    q?: string;
+    status?: string;
+    owner?: string;
+    error?: string;
+  }>;
 }) {
   const profile = await requireSessionProfile("viewer");
   const canManage = hasRole("manager", profile.role);
@@ -53,7 +63,9 @@ export default async function PoliciesPage({
 
   const q = params.q?.trim() ?? "";
   const status = isPolicyStatus(params.status) ? params.status : "";
-  const owner = z.string().uuid().safeParse(params.owner).success ? (params.owner ?? "") : "";
+  const owner = z.string().uuid().safeParse(params.owner).success
+    ? (params.owner ?? "")
+    : "";
 
   const supabase = await createSupabaseServerClient();
   let query = supabase
@@ -64,8 +76,9 @@ export default async function PoliciesPage({
     .is("deleted_at", null)
     .order("updated_at", { ascending: false });
 
-  if (q) {
-    query = query.or(`title.ilike.%${q}%,version.ilike.%${q}%`);
+  const searchFilter = buildIlikeOrFilter(["title", "version"], q);
+  if (searchFilter) {
+    query = query.or(searchFilter);
   }
 
   if (status) {
@@ -76,7 +89,11 @@ export default async function PoliciesPage({
     query = query.eq("owner_profile_id", owner);
   }
 
-  const [{ data: policies, error }, { data: owners }, { data: attestationTargets }] = await Promise.all([
+  const [
+    { data: policies, error },
+    { data: owners },
+    { data: attestationTargets },
+  ] = await Promise.all([
     query.returns<PolicyRow[]>(),
     supabase
       .from("profiles")
@@ -92,7 +109,10 @@ export default async function PoliciesPage({
   ]);
 
   const ownerById = new Map(
-    (owners ?? []).map((item) => [item.id, item.full_name ? `${item.full_name} (${item.email})` : item.email]),
+    (owners ?? []).map((item) => [
+      item.id,
+      item.full_name ? `${item.full_name} (${item.email})` : item.email,
+    ]),
   );
 
   const attestationStatsByPolicy = new Map<
@@ -137,10 +157,16 @@ export default async function PoliciesPage({
         ) : null}
       </div>
 
-      {params.error ? <FeedbackAlert message={decodeURIComponent(params.error)} /> : null}
+      {params.error ? (
+        <FeedbackAlert message={decodeURIComponent(params.error)} />
+      ) : null}
 
       <form className="grid gap-3 rounded-lg border bg-card p-4 md:grid-cols-4">
-        <Input name="q" placeholder="Search by title or version" defaultValue={q} />
+        <Input
+          name="q"
+          placeholder="Search by title or version"
+          defaultValue={q}
+        />
 
         <select
           name="status"
@@ -165,12 +191,17 @@ export default async function PoliciesPage({
           <option value="">All owners</option>
           {(owners ?? []).map((item) => (
             <option key={item.id} value={item.id}>
-              {item.full_name ? `${item.full_name} (${item.email})` : item.email}
+              {item.full_name
+                ? `${item.full_name} (${item.email})`
+                : item.email}
             </option>
           ))}
         </select>
 
-        <button type="submit" className={cn(buttonVariants({ variant: "outline" }), "w-full")}>
+        <button
+          type="submit"
+          className={cn(buttonVariants({ variant: "outline" }), "w-full")}
+        >
           Apply filters
         </button>
       </form>
@@ -224,7 +255,11 @@ export default async function PoliciesPage({
                 : null;
               const alerts: string[] = [];
 
-              if (policy.status === "active" && nextReviewDelta !== null && nextReviewDelta < 0) {
+              if (
+                policy.status === "active" &&
+                nextReviewDelta !== null &&
+                nextReviewDelta < 0
+              ) {
                 alerts.push(`Review overdue ${Math.abs(nextReviewDelta)}d`);
               } else if (
                 policy.status === "active" &&
@@ -242,19 +277,29 @@ export default async function PoliciesPage({
               return (
                 <tr key={policy.id} className="border-b last:border-b-0">
                   <td className="px-4 py-3">
-                    <Link href={`/dashboard/policies/${policy.id}`} className="font-medium hover:underline">
+                    <Link
+                      href={`/dashboard/policies/${policy.id}`}
+                      className="font-medium hover:underline"
+                    >
                       {policy.title}
                     </Link>
                   </td>
                   <td className="px-4 py-3">{policy.version}</td>
                   <td className="px-4 py-3">{policy.status}</td>
-                  <td className="px-4 py-3 text-muted-foreground">{policy.effective_date}</td>
-                  <td className="px-4 py-3 text-muted-foreground">{policy.next_review_date ?? "-"}</td>
                   <td className="px-4 py-3 text-muted-foreground">
-                    {policy.owner_profile_id ? ownerById.get(policy.owner_profile_id) ?? "Unknown" : "-"}
+                    {policy.effective_date}
                   </td>
                   <td className="px-4 py-3 text-muted-foreground">
-                    {stats.acknowledged}/{stats.total} (p:{stats.pending} o:{stats.overdue})
+                    {policy.next_review_date ?? "-"}
+                  </td>
+                  <td className="px-4 py-3 text-muted-foreground">
+                    {policy.owner_profile_id
+                      ? (ownerById.get(policy.owner_profile_id) ?? "Unknown")
+                      : "-"}
+                  </td>
+                  <td className="px-4 py-3 text-muted-foreground">
+                    {stats.acknowledged}/{stats.total} (p:{stats.pending} o:
+                    {stats.overdue})
                   </td>
                   <td className="px-4 py-3 text-muted-foreground">
                     {alerts.length > 0 ? alerts.join(" | ") : "-"}
@@ -268,7 +313,10 @@ export default async function PoliciesPage({
 
             {!error && (policies?.length ?? 0) === 0 ? (
               <tr>
-                <td className="px-4 py-8 text-center text-muted-foreground" colSpan={9}>
+                <td
+                  className="px-4 py-8 text-center text-muted-foreground"
+                  colSpan={9}
+                >
                   No policies found for the current filters.
                 </td>
               </tr>

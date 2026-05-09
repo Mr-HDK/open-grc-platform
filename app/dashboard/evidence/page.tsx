@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { requireSessionProfile } from "@/lib/auth/profile";
 import { getEvidenceSignedUrlById } from "@/lib/evidence/signed-url";
 import { hasRole } from "@/lib/permissions/roles";
+import { buildIlikeOrFilter } from "@/lib/supabase/filters";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 type EvidenceListItem = {
@@ -53,12 +54,15 @@ export default async function EvidencePage({
 
   let query = supabase
     .from("evidence")
-    .select("id, title, file_name, file_path, file_size, mime_type, risk_id, control_id, action_plan_id, created_at")
+    .select(
+      "id, title, file_name, file_path, file_size, mime_type, risk_id, control_id, action_plan_id, created_at",
+    )
     .is("archived_at", null)
     .order("created_at", { ascending: false });
 
-  if (q) {
-    query = query.or(`title.ilike.%${q}%,file_name.ilike.%${q}%`);
+  const searchFilter = buildIlikeOrFilter(["title", "file_name"], q);
+  if (searchFilter) {
+    query = query.or(searchFilter);
   }
 
   if (target === "risk") {
@@ -81,9 +85,12 @@ export default async function EvidencePage({
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Evidence registry</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">
+            Evidence registry
+          </h1>
           <p className="text-sm text-muted-foreground">
-            Upload and track file-based proof linked to risks, controls, and actions.
+            Upload and track file-based proof linked to risks, controls, and
+            actions.
           </p>
         </div>
         {canUpload ? (
@@ -93,10 +100,16 @@ export default async function EvidencePage({
         ) : null}
       </div>
 
-      {params.error ? <FeedbackAlert message={decodeURIComponent(params.error)} /> : null}
+      {params.error ? (
+        <FeedbackAlert message={decodeURIComponent(params.error)} />
+      ) : null}
 
       <form className="grid gap-3 rounded-lg border bg-card p-4 md:grid-cols-3">
-        <Input name="q" placeholder="Search by title or filename" defaultValue={q} />
+        <Input
+          name="q"
+          placeholder="Search by title or filename"
+          defaultValue={q}
+        />
 
         <select
           name="target"
@@ -110,7 +123,10 @@ export default async function EvidencePage({
           <option value="action">Linked to action plan</option>
         </select>
 
-        <button type="submit" className={buttonVariants({ variant: "outline" })}>
+        <button
+          type="submit"
+          className={buttonVariants({ variant: "outline" })}
+        >
           Apply filters
         </button>
       </form>
@@ -158,10 +174,14 @@ export default async function EvidencePage({
                       Download
                     </a>
                   ) : (
-                    <span className="mt-1 inline-block text-xs">Download unavailable</span>
+                    <span className="mt-1 inline-block text-xs">
+                      Download unavailable
+                    </span>
                   )}
                 </td>
-                <td className="px-4 py-3 text-muted-foreground">{formatFileSize(item.file_size)}</td>
+                <td className="px-4 py-3 text-muted-foreground">
+                  {formatFileSize(item.file_size)}
+                </td>
                 <td className="px-4 py-3 text-xs text-muted-foreground">
                   <div>{item.risk_id ? "Risk" : "-"}</div>
                   <div>{item.control_id ? "Control" : "-"}</div>
@@ -174,7 +194,10 @@ export default async function EvidencePage({
                   {canArchive ? (
                     <form action={archiveEvidenceAction}>
                       <input type="hidden" name="evidenceId" value={item.id} />
-                      <button type="submit" className="text-xs font-medium text-muted-foreground underline">
+                      <button
+                        type="submit"
+                        className="text-xs font-medium text-muted-foreground underline"
+                      >
                         Archive
                       </button>
                     </form>
@@ -187,7 +210,10 @@ export default async function EvidencePage({
 
             {!error && (data?.length ?? 0) === 0 ? (
               <tr>
-                <td className="px-4 py-8 text-center text-muted-foreground" colSpan={6}>
+                <td
+                  className="px-4 py-8 text-center text-muted-foreground"
+                  colSpan={6}
+                >
                   No evidence found for the current filters.
                 </td>
               </tr>
